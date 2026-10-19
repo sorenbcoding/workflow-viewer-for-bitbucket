@@ -1,0 +1,18 @@
+{
+  "name": "@sorenb/dev-harness",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local preview of the renderer with the bundled samples or a folder on disk.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@sorenb/xaml-core": "0.1.0",
+    "@sorenb/xaml-render": "0.1.0"
+  }
+}
