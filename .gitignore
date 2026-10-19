@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+coverage/
+*.log
+.env
+.env.*
+# Forge local state (contains tunnel and environment settings)
+.forge/
+apps/forge-app/static/viewer/

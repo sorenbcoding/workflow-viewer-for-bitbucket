@@ -1,0 +1,31 @@
+{
+  "name": "workflow-viewer-for-bitbucket",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Read-only canvas view of UiPath workflows inside Bitbucket Cloud.",
+  "license": "MIT",
+  "author": "Søren Schytz Birk",
+  "repository": "github:sorenbcoding/workflow-viewer-for-bitbucket",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @sorenb/dev-harness",
+    "test": "npm test -w @sorenb/xaml-core",
+    "typecheck": "tsc -p packages/xaml-core && tsc -p packages/xaml-render && tsc -p apps/dev-harness && tsc -p apps/forge-app",
+    "build:forge": "npm run build -w @sorenb/forge-app",
+    "brand-check": "python %USERPROFILE%/.claude/skills/sorenb-brand/scripts/brand_check.py . --category app"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
+    "@vitejs/plugin-react": "^4.7.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "~5.6",
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
+  }
+}
