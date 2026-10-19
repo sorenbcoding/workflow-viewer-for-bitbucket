@@ -1,0 +1,86 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Process" sap2010:WorkflowViewState.IdRef="ActivityBuilder_1" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:acme="clr-namespace:Acme.Synthetic.Activities;assembly=Acme.Synthetic.Activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_TransactionItem" Type="InArgument(ui:QueueItem)" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="io_RetryCount" Type="InOutArgument(x:Int32)" />
+  </x:Members>
+  <Sequence DisplayName="Process" sap2010:WorkflowViewState.IdRef="Sequence_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="invoiceNumber" />
+      <Variable x:TypeArguments="x:String" Default="Standard" Name="invoiceType" />
+      <Variable x:TypeArguments="x:Decimal" Name="total" />
+    </Sequence.Variables>
+    <TryCatch DisplayName="Try process invoice" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+      <TryCatch.Try>
+        <Sequence DisplayName="Process invoice" sap2010:WorkflowViewState.IdRef="Sequence_2">
+          <ui:InvokeWorkflowFile ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke ValidateInvoice" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_1" UnSafe="False" WorkflowFileName="Framework\ValidateInvoice.xaml">
+            <ui:InvokeWorkflowFile.Arguments>
+              <InArgument x:TypeArguments="ui:QueueItem" x:Key="in_TransactionItem">[in_TransactionItem]</InArgument>
+              <OutArgument x:TypeArguments="x:String" x:Key="out_InvoiceNumber">[invoiceNumber]</OutArgument>
+            </ui:InvokeWorkflowFile.Arguments>
+          </ui:InvokeWorkflowFile>
+          <ui:InvokeWorkflowFile ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke CalculateTotals" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_2" UnSafe="False" WorkflowFileName="Framework\CalculateTotals.xaml" />
+          <uix:NApplicationCard DisplayName="Use Application: Invoice Portal" sap2010:WorkflowViewState.IdRef="NApplicationCard_1" OpenMode="IfNotOpen" AttachMode="SingleWindow">
+            <uix:NApplicationCard.Body>
+              <ActivityAction x:TypeArguments="x:Object">
+                <ActivityAction.Argument>
+                  <DelegateInArgument x:TypeArguments="x:Object" Name="WSSessionData" />
+                </ActivityAction.Argument>
+                <Sequence DisplayName="Do" sap2010:WorkflowViewState.IdRef="Sequence_3">
+                  <uix:NTypeInto DisplayName="Type Into 'Invoice number'" sap2010:WorkflowViewState.IdRef="NTypeInto_1" EmptyFieldMode="SingleLine" Text="[invoiceNumber]">
+                    <uix:NTypeInto.Target>
+                      <uix:TargetAnchorable FullSelectorArgument="&lt;webctrl id='invoice-number' tag='INPUT' /&gt;" ElementType="InputBox" />
+                    </uix:NTypeInto.Target>
+                  </uix:NTypeInto>
+                  <uix:NClick ActivateBefore="True" ClickType="Single" DisplayName="Click 'Approve'" sap2010:WorkflowViewState.IdRef="NClick_1" MouseButton="Left">
+                    <uix:NClick.Target>
+                      <uix:TargetAnchorable FullSelectorArgument="&lt;webctrl tag='BUTTON' aaname='Approve' /&gt;" ElementType="Button" />
+                    </uix:NClick.Target>
+                  </uix:NClick>
+                </Sequence>
+              </ActivityAction>
+            </uix:NApplicationCard.Body>
+          </uix:NApplicationCard>
+          <Switch x:TypeArguments="x:String" DisplayName="Switch on invoice type" Expression="[invoiceType]" sap2010:WorkflowViewState.IdRef="Switch`1_1">
+            <Switch.Default>
+              <ui:LogMessage DisplayName="Log unknown type" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Warn" Message="[&quot;Unknown invoice type: &quot; + invoiceType]" />
+            </Switch.Default>
+            <ui:InvokeWorkflowFile x:Key="Standard" ArgumentsVariable="{x:Null}" ContinueOnError="{x:Null}" DisplayName="Invoke type handler" sap2010:WorkflowViewState.IdRef="InvokeWorkflowFile_3" UnSafe="False" WorkflowFileName="[&quot;Handlers\&quot; + invoiceType + &quot;.xaml&quot;]" />
+            <acme:PostToLedger x:Key="Credit" DisplayName="Post credit note" sap2010:WorkflowViewState.IdRef="PostToLedger_1" Amount="[total]" Ledger="Credit" />
+          </Switch>
+        </Sequence>
+      </TryCatch.Try>
+      <TryCatch.Catches>
+        <Catch x:TypeArguments="ui:BusinessRuleException" sap2010:WorkflowViewState.IdRef="Catch`1_1">
+          <ActivityAction x:TypeArguments="ui:BusinessRuleException">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="ui:BusinessRuleException" Name="businessException" />
+            </ActivityAction.Argument>
+            <ui:LogMessage DisplayName="Log business exception" sap2010:WorkflowViewState.IdRef="LogMessage_2" Level="Error" Message="[businessException.Message]" />
+          </ActivityAction>
+        </Catch>
+        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_2">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+            </ActivityAction.Argument>
+            <Sequence DisplayName="Handle system exception" sap2010:WorkflowViewState.IdRef="Sequence_4">
+              <Assign DisplayName="Increase retry count" sap2010:WorkflowViewState.IdRef="Assign_1">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="x:Int32">[io_RetryCount]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="x:Int32">[io_RetryCount + 1]</InArgument>
+                </Assign.Value>
+              </Assign>
+              <Rethrow DisplayName="Rethrow" sap2010:WorkflowViewState.IdRef="Rethrow_1" />
+            </Sequence>
+          </ActivityAction>
+        </Catch>
+      </TryCatch.Catches>
+      <TryCatch.Finally>
+        <ui:LogMessage DisplayName="Log finished" sap2010:WorkflowViewState.IdRef="LogMessage_3" Level="Info" Message="[&quot;Finished invoice &quot; + invoiceNumber]" />
+      </TryCatch.Finally>
+    </TryCatch>
+  </Sequence>
+</Activity>
