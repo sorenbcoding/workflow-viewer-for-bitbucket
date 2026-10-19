@@ -1,0 +1,13 @@
+html, body, #root { margin: 0; height: 100%; background: var(--sb-surface); }
+.harness { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100%; font-family: var(--sb-font-sans); font-size: var(--sb-text-body); color: var(--sb-ink); }
+.harness__nav { background: var(--sb-surface-alt); border-right: var(--sb-border-width) solid var(--sb-slate-300); padding: var(--sb-space-4); display: flex; flex-direction: column; gap: var(--sb-space-2); align-items: flex-start; }
+.harness__brand { display: flex; align-items: center; gap: var(--sb-space-2); font-weight: 600; }
+.harness__heading { font-size: var(--sb-text-caption); font-weight: 600; color: var(--sb-slate-600); margin: var(--sb-space-3) 0 0; text-transform: none; }
+.harness__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--sb-space-1); font-size: var(--sb-text-caption); }
+.harness__file { position: relative; overflow: hidden; }
+.harness__file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.harness__main { min-width: 0; }
+@media (max-width: 760px) {
+  .harness { grid-template-columns: minmax(0, 1fr); }
+  .harness__nav { border-right: 0; border-bottom: var(--sb-border-width) solid var(--sb-slate-300); }
+}
