@@ -1,0 +1,20 @@
+{
+  "name": "@sorenb/forge-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bitbucket Cloud Forge app: file viewer for .xaml files and a repository overview page.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "deploy": "vite build && forge deploy",
+    "tunnel": "vite build && forge tunnel"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
+    "@forge/bridge": "^7.2.0",
+    "@sorenb/xaml-core": "0.1.0",
+    "@sorenb/xaml-render": "0.1.0"
+  }
+}
