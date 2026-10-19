@@ -1,0 +1,22 @@
+# Workflow Viewer for Bitbucket (SorenB.WorkflowViewer)
+# Run `forge register` once to replace app.id with your own app id.
+modules:
+  bitbucket:repoCodeFileViewer:
+    - key: workflow-viewer-file
+      resource: main
+      title: Workflow Viewer
+      filePattern: '.*\.xaml$'
+  bitbucket:repoMainMenuPage:
+    - key: workflow-viewer-project
+      resource: main
+      title: Workflow overview
+resources:
+  - key: main
+    path: static/viewer
+permissions:
+  scopes:
+    - read:repository:bitbucket
+app:
+  runtime:
+    name: nodejs22.x
+  id: ari:cloud:ecosystem::app/00000000-0000-0000-0000-000000000000
