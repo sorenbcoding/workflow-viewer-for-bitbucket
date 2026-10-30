@@ -101,10 +101,23 @@ export function walkActivities(node: ActivityNode | undefined, visit: (n: Activi
   }
 }
 
-/** Removes the `[...]` wrapper of a VB expression and decodes a plain string literal. */
+/**
+ * Removes the `[...]` wrapper of a VB expression. Only strips when the first `[` closes at the last `]`,
+ * so a value such as `["a"] [18]` is left as it is. Brackets inside string literals are ignored.
+ */
 export function formatExpression(value: string): string {
   const v = value.trim();
-  return v.startsWith('[') && v.endsWith(']') ? v.slice(1, -1).trim() : v;
+  if (!v.startsWith('[') || !v.endsWith(']')) return v;
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < v.length; i++) {
+    const ch = v[i];
+    if (ch === '"') inString = !inString;
+    else if (inString) continue;
+    else if (ch === '[') depth++;
+    else if (ch === ']' && --depth === 0 && i < v.length - 1) return v;
+  }
+  return v.slice(1, -1).trim();
 }
 
 /** Target of an Invoke Workflow File activity, or undefined for any other activity. */

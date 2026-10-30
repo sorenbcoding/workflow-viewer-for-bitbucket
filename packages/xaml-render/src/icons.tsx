@@ -71,6 +71,10 @@ export function summaryOf(node: ActivityNode): string | undefined {
       return e('Exception') && shorten(e('Exception')!);
     case 'Delay':
       return e('Duration');
+    case 'FilterDataTable': {
+      const rows = (p.Filters ?? '').split('\n').filter(Boolean);
+      return rows.length ? shorten(rows[0] + (rows.length > 1 ? ` (+${rows.length - 1} more)` : '')) : undefined;
+    }
   }
   if (/ForEach/.test(node.localType)) return e('Values') ?? e('DataTable');
   const target = p.Target ?? p.FullSelectorArgument ?? p.Selector;

@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+### Added
+- The properties panel shows the full .NET type under the XAML tag, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. Types from shared schema URIs are inferred and marked with a tooltip.
+- Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
+
+### Fixed
+- Properties that hold lists of objects, such as Filter Data Table filters, lost their operators and showed cut-off text such as `"Age"] [18`.
+- `formatExpression` no longer strips brackets that do not wrap the whole expression.
+
 ## [0.1.0] - 2026-10-19
 
 ### Added

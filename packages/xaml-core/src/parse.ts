@@ -14,6 +14,7 @@ import type {
   WorkflowDocument,
   WorkflowVariable,
 } from './model.js';
+import { formatExpression } from './project.js';
 import { deepText, localOf, parseXml, prefixOf, type XElement } from './xml.js';
 
 const XAML_NS = 'http://schemas.microsoft.com/winfx/2006/xaml';
@@ -124,14 +125,90 @@ function noteExpressions(el: XElement, ctx: Context): void {
   el.children.forEach((c) => noteExpressions(c, ctx));
 }
 
-/** Text of a value element: an expression, a literal or an object summary. */
+/** Elements whose content is one expression or literal. */
+const EXPRESSION_LOCALS = new Set([
+  'InArgument', 'OutArgument', 'InOutArgument', 'Literal', 'VisualBasicValue', 'VisualBasicReference', 'CSharpValue', 'CSharpReference',
+]);
+
+/** Filter Data Table operators as Studio shows them. */
+const FILTER_OPERATORS: Record<string, string> = {
+  EQ: '=', NE: '≠', GT: '>', GE: '≥', LT: '<', LE: '≤',
+  CONTAINS: 'contains', STARTS_WITH: 'starts with', ENDS_WITH: 'ends with', EMPTY: 'empty', NOT_EMPTY: 'not empty',
+};
+
+const plainAttrs = (el: XElement) =>
+  Object.entries(el.attrs).filter(
+    ([k, v]) => v !== NULL_VALUE && !k.startsWith('x:') && !k.startsWith('xmlns') && !localOf(k).includes('.') && k !== 'Capacity',
+  );
+
+/** One filter row, e.g. `Or "Age" > 18`. The And/Or is left out on the first row, like in Studio. */
+function filterText(el: XElement, ctx: Context, index: number): string {
+  const part = (suffix: string) => {
+    const prop = el.children.find((c) => c.name === `${el.name}.${suffix}`);
+    return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || decodeEntities(prop.text)) : '';
+  };
+  const op = el.attrs.Operator ?? '';
+  const words = [index > 0 ? el.attrs.BooleanOperator : undefined, part('Column'), FILTER_OPERATORS[op] ?? op, part('Operand')];
+  return words.filter(Boolean).join(' ');
+}
+
+/**
+ * Readable text for a value element. Expressions keep their text as written; lists become one line per item;
+ * other objects become `Type { Name=value, ... }`.
+ */
+function objectText(el: XElement, ctx: Context, index = 0): string {
+  const local = localOf(el.name);
+  if (local === 'Null') return '';
+  if (EXPRESSION_LOCALS.has(local)) return decodeEntities(deepText(el));
+  if (local === 'FilterOperationArgument') return filterText(el, ctx, index);
+  const props = el.children.filter((c) => isPropertyOf(c, el));
+  const items = el.children.filter((c) => !isPropertyOf(c, el) && !isAttached(c, el));
+  const attrs = plainAttrs(el);
+  if (!props.length && !items.length) {
+    if (el.text) return decodeEntities(el.text);
+    return attrs.length ? `${local} { ${attrs.map(([k, v]) => `${k}=${decodeEntities(v)}`).join(', ')} }` : '';
+  }
+  if (!props.length && !attrs.length) return items.map((c, i) => objectText(c, ctx, i)).filter(Boolean).join('\n');
+  const parts = [
+    ...attrs.map(([k, v]) => `${k}=${decodeEntities(v)}`),
+    ...props.map((p) => `${suffixOf(p, el)}=${formatExpression(p.children.map((c) => objectText(c, ctx)).join(', ') || decodeEntities(p.text))}`),
+    ...items.map((c, i) => formatExpression(objectText(c, ctx, i))),
+  ];
+  return `${local} { ${parts.join(', ')} }`;
+}
+
+/** Text of a value element: an expression, a literal, a list or an object summary. */
 function valueText(el: XElement, ctx: Context): string {
   noteExpressions(el, ctx);
-  if (localOf(el.name) === 'Null') return '';
-  const text = deepText(el);
-  if (text) return decodeEntities(text);
-  const attrs = Object.entries(el.attrs).filter(([k, v]) => v !== NULL_VALUE && !k.startsWith('x:') && !localOf(k).includes('.'));
-  return attrs.length ? `${localOf(el.name)} { ${attrs.map(([k, v]) => `${k}=${decodeEntities(v)}`).join(', ')} }` : '';
+  return objectText(el, ctx);
+}
+
+const URI_NAMESPACES: Record<string, string> = {
+  'http://schemas.microsoft.com/netfx/2009/xaml/activities': 'System.Activities.Statements',
+  'http://schemas.uipath.com/workflow/activities/uix': 'UiPath.UIAutomationNext.Activities',
+};
+const UIPATH_URI = 'http://schemas.uipath.com/workflow/activities';
+
+/** Several UiPath packages share one schema URI; pick the package from the activity name. */
+function uipathNamespace(local: string): string {
+  if (/^Excel/.test(local)) return 'UiPath.Excel.Activities';
+  if (/Outlook/i.test(local)) return 'UiPath.Mail.Outlook.Activities';
+  if (/Smtp/i.test(local)) return 'UiPath.Mail.SMTP.Activities';
+  if (/Imap/i.test(local)) return 'UiPath.Mail.IMAP.Activities';
+  if (/Pop3/i.test(local)) return 'UiPath.Mail.POP3.Activities';
+  if (/Exchange/i.test(local)) return 'UiPath.Mail.Exchange.Activities';
+  return 'UiPath.Core.Activities';
+}
+
+/** Full .NET type of an activity element, e.g. `UiPath.Core.Activities.ForEach<Decimal>`. */
+function fullTypeOf(el: XElement, ctx: Context): { fullType?: string; fullTypeInferred?: boolean } {
+  const uri = ctx.uri(el.name);
+  const local = localOf(el.name);
+  const clr = uri.match(/^clr-namespace:([^;]+)/)?.[1];
+  const ns = clr ?? URI_NAMESPACES[uri] ?? (uri === UIPATH_URI ? uipathNamespace(local) : undefined);
+  if (!ns) return {};
+  const args = el.attrs['x:TypeArguments'];
+  return { fullType: `${ns}.${local}${args ? `<${typeName(args)}>` : ''}`, fullTypeInferred: !clr };
 }
 
 function parseVariables(prop: XElement, scope: string, ctx: Context): WorkflowVariable[] {
@@ -182,6 +259,7 @@ function baseOf(el: XElement, ctx: Context) {
     variables: [] as WorkflowVariable[],
     viewState,
     isExpanded: viewState?.isExpanded,
+    ...fullTypeOf(el, ctx),
   };
 }
 
