@@ -48,7 +48,7 @@ describe('sequence workflows', () => {
       ['dtSettings', 'DataTable', undefined],
       ['configPath', 'String', 'Data\\Config.xlsx'],
     ]);
-    expect(slot(root, '').children.map((c) => c.displayName)).toEqual(['Create dictionary', 'Use Excel File', 'For Each Row in Settings']);
+    expect(slot(root, '').children.map((c) => c.displayName)).toEqual(['Create dictionary', 'Use Excel File', 'For Each Row in Settings', 'Set defaults']);
   });
 
   it('reads Assign properties from property elements', () => {
@@ -313,5 +313,34 @@ describe('nested property values', () => {
     expect(formatExpression('["a"] [18]')).toBe('["a"] [18]');
     expect(formatExpression('[x]')).toBe('x');
     expect(formatExpression('[row("[a]")]')).toBe('row("[a]")');
+  });
+});
+
+describe('multiple assign', () => {
+  const doc = load('Framework/InitAllSettings.xaml');
+  const multi = generic(slot(doc.root, '').children[3]);
+
+  it('reads each assignment as a row', () => {
+    expect(multi.fullType).toBe('UiPath.Core.Activities.MultipleAssign');
+    expect(multi.assignments).toEqual([
+      { to: '[out_Config("RetryNumber")]', value: '[3]' },
+      { to: '[out_Config("Queue")]', value: '["Invoices"]' },
+      { to: '[configPath]', value: '[configPath.Trim]' },
+    ]);
+    expect(multi.properties.AssignOperations).toBe('out_Config("RetryNumber") = 3\nout_Config("Queue") = "Invoices"\nconfigPath = configPath.Trim');
+  });
+});
+
+describe('imports', () => {
+  it('reads NamespacesForImplementation', () => {
+    expect(load('Main.xaml').imports).toEqual(['System', 'System.Data', 'UiPath.Core']);
+  });
+
+  it('reads the older VisualBasic.Settings form', () => {
+    expect(load('Framework/InitAllSettings.xaml').imports).toEqual(['System', 'System.Collections.Generic', 'System.Data']);
+  });
+
+  it('returns an empty list when the workflow has no imports', () => {
+    expect(load('Process.xaml').imports).toEqual([]);
   });
 });

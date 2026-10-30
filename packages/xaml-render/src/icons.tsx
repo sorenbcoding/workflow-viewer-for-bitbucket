@@ -71,6 +71,10 @@ export function summaryOf(node: ActivityNode): string | undefined {
       return e('Exception') && shorten(e('Exception')!);
     case 'Delay':
       return e('Duration');
+    case 'MultipleAssign':
+      return node.kind === 'activity' && node.assignments?.length
+        ? `${node.assignments.length} assignment${node.assignments.length === 1 ? '' : 's'}`
+        : undefined;
     case 'FilterDataTable': {
       const rows = (p.Filters ?? '').split('\n').filter(Boolean);
       return rows.length ? shorten(rows[0] + (rows.length > 1 ? ` (+${rows.length - 1} more)` : '')) : undefined;

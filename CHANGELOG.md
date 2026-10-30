@@ -7,6 +7,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ### Added
 - The properties panel shows the full .NET type under the XAML tag, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. Types from shared schema URIs are inferred and marked with a tooltip.
+- Multiple Assign shows one `To = Value` row per assignment on the canvas (first 8, with Show all) and as a To/Value table in the properties panel.
+- A collapsed Imports section lists the workflow's imported namespaces, read from `NamespacesForImplementation` or the older `VisualBasic.Settings` form.
+- Properties with several values, such as Filter Data Table filters, show one value per line.
 - Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
 
 ### Fixed

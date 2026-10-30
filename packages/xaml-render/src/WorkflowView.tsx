@@ -94,6 +94,16 @@ export function WorkflowView({ doc, path, onOpenInvoke, actions }: Props) {
           )}
         </Collapsible>
 
+        <Collapsible title="Imports" count={doc.imports.length}>
+          {doc.imports.length ? (
+            <ul className="sbv-lines">
+              {doc.imports.map((ns) => <li key={ns}><code className="sbv-code">{ns}</code></li>)}
+            </ul>
+          ) : (
+            <p className="sbv-muted">This workflow lists no imported namespaces.</p>
+          )}
+        </Collapsible>
+
         <div className="sbv-toolbar">
           <button type="button" className="sbv-btn" onClick={() => setExpand((e) => ({ open: true, n: e.n + 1 }))}>Expand all</button>
           <button type="button" className="sbv-btn" onClick={() => setExpand((e) => ({ open: false, n: e.n + 1 }))}>Collapse all</button>

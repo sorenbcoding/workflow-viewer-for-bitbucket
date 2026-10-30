@@ -161,6 +161,13 @@ function objectText(el: XElement, ctx: Context, index = 0): string {
   if (local === 'Null') return '';
   if (EXPRESSION_LOCALS.has(local)) return decodeEntities(deepText(el));
   if (local === 'FilterOperationArgument') return filterText(el, ctx, index);
+  if (local === 'AssignOperation') {
+    const side = (suffix: string) => {
+      const prop = el.children.find((c) => c.name === `${el.name}.${suffix}`);
+      return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || decodeEntities(prop.text)) : '';
+    };
+    return `${side('To')} = ${side('Value')}`;
+  }
   const props = el.children.filter((c) => isPropertyOf(c, el));
   const items = el.children.filter((c) => !isPropertyOf(c, el) && !isAttached(c, el));
   const attrs = plainAttrs(el);
@@ -326,7 +333,24 @@ function parseActivity(el: XElement, ctx: Context): ActivityNode {
   }
   // Studio keeps an unnamed slot first so a Sequence reads top to bottom.
   node.slots.sort((a, b) => (a.name === '' ? -1 : b.name === '' ? 1 : 0));
+  if (local === 'MultipleAssign') node.assignments = assignmentsOf(el, ctx);
   return node;
+}
+
+/** Reads the rows of a Multiple Assign: each `AssignOperation` with its `To` and `Value`. */
+function assignmentsOf(el: XElement, ctx: Context): { to: string; value: string }[] {
+  const rows: { to: string; value: string }[] = [];
+  const visit = (e: XElement) => {
+    if (localOf(e.name) === 'AssignOperation') {
+      const side = (suffix: string) => {
+        const prop = e.children.find((c) => c.name === `${e.name}.${suffix}`);
+        return prop ? prop.children.map((c) => valueText(c, ctx)).join(' ') || decodeEntities(prop.text) : '';
+      };
+      rows.push({ to: side('To'), value: side('Value') });
+    } else e.children.forEach(visit);
+  };
+  el.children.filter((c) => c.name === `${el.name}.AssignOperations`).forEach(visit);
+  return rows;
 }
 
 function firstActivity(el: XElement | undefined, ctx: Context): ActivityNode | undefined {
@@ -502,6 +526,22 @@ function parseArguments(root: XElement): WorkflowArgument[] {
     });
 }
 
+/**
+ * Reads the workflow's imported namespaces. Current Studio versions keep them in
+ * `TextExpression.NamespacesForImplementation`; older VB workflows in `VisualBasic.Settings`.
+ */
+function parseImports(root: XElement): string[] {
+  const found = new Set<string>();
+  const holder = childBySuffix(root, 'TextExpression.NamespacesForImplementation');
+  for (const list of holder?.children ?? []) for (const item of list.children) if (item.text) found.add(item.text.trim());
+  const visit = (e: XElement) => {
+    if (localOf(e.name) === 'VisualBasicImportReference' && e.attrs.Import) found.add(e.attrs.Import.trim());
+    e.children.forEach(visit);
+  };
+  root.children.filter((c) => c.name.endsWith('VisualBasic.Settings')).forEach(visit);
+  return [...found].sort((a, b) => a.localeCompare(b));
+}
+
 /** Parses a UiPath `.xaml` workflow. Throws only when the file is not XML; everything else becomes a warning. */
 export function parseWorkflow(source: string): WorkflowDocument {
   const root = parseXml(source);
@@ -513,6 +553,7 @@ export function parseWorkflow(source: string): WorkflowDocument {
   const ctx = new Context(ns);
   const doc: WorkflowDocument = {
     className: root.attrs['x:Class'],
+    imports: parseImports(root),
     expressionLanguage: 'Unknown',
     arguments: parseArguments(root),
     warnings: ctx.warnings,
