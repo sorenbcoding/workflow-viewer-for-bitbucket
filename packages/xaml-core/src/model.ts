@@ -66,9 +66,16 @@ interface ActivityBase {
   fullTypeInferred?: boolean;
 }
 
+export interface Assignment {
+  to: string;
+  value: string;
+}
+
 export interface GenericActivity extends ActivityBase {
   kind: 'activity';
   slots: ActivitySlot[];
+  /** Rows of a Multiple Assign, expressions kept as written. */
+  assignments?: Assignment[];
 }
 
 export type FlowNodeKind = 'step' | 'decision' | 'switch';
@@ -136,6 +143,8 @@ export type ActivityNode = GenericActivity | FlowchartActivity | StateMachineAct
 export interface WorkflowDocument {
   /** `x:Class` of the root, e.g. `Main`. */
   className?: string;
+  /** Imported namespaces, as listed in Studio's Imports panel. Sorted, without duplicates. */
+  imports: string[];
   annotation?: string;
   expressionLanguage: 'VisualBasic' | 'CSharp' | 'Unknown';
   arguments: WorkflowArgument[];

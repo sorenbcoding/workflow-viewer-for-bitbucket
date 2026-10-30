@@ -3,6 +3,7 @@ import {
   formatExpression,
   invokeOf,
   type ActivityNode,
+  type Assignment,
   type FlowchartActivity,
   type StateMachineActivity,
   type WorkflowVariable,
@@ -21,6 +22,8 @@ export interface Selection {
   annotation?: string;
   properties: Record<string, string>;
   variables?: WorkflowVariable[];
+  /** Rows of a Multiple Assign; shown as a table instead of the AssignOperations property. */
+  assignments?: Assignment[];
 }
 
 export const selectionOf = (n: ActivityNode): Selection => ({
@@ -32,6 +35,7 @@ export const selectionOf = (n: ActivityNode): Selection => ({
   annotation: n.annotation,
   properties: n.properties,
   variables: n.variables,
+  assignments: n.kind === 'activity' ? n.assignments : undefined,
 });
 
 interface ViewerState {
@@ -45,6 +49,36 @@ interface ViewerState {
 export const ViewerContext = createContext<ViewerState>({ select: () => {}, expand: { open: true, n: 0 } });
 const useViewer = () => useContext(ViewerContext);
 
+const ASSIGN_PREVIEW_ROWS = 8;
+
+/** Multiple Assign rows on the canvas, one `To = Value` per row, like Studio's designer. */
+function AssignRows({ rows }: { rows: Assignment[] }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? rows : rows.slice(0, ASSIGN_PREVIEW_ROWS);
+  return (
+    <div className="sbv-assign-wrap">
+      <div className="sbv-assign" role="table" aria-label="Assignments">
+        {shown.map((r, i) => {
+          const to = formatExpression(r.to);
+          const value = formatExpression(r.value);
+          return (
+            <div key={i} className="sbv-assign__row" role="row">
+              <span className="sbv-assign__to" role="cell" title={to}>{to}</span>
+              <span className="sbv-assign__eq" aria-hidden="true">=</span>
+              <span className="sbv-assign__value" role="cell" title={value}>{value}</span>
+            </div>
+          );
+        })}
+      </div>
+      {rows.length > ASSIGN_PREVIEW_ROWS && (
+        <button type="button" className="sbv-link sbv-assign__more" onClick={() => setAll(!all)}>
+          {all ? 'Show fewer' : `Show all ${rows.length}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -55,7 +89,8 @@ function Chevron({ open }: { open: boolean }) {
 
 export function ActivityBlock({ node, depth = 0 }: { node: ActivityNode; depth?: number }) {
   const { selectedId, select, onOpenInvoke, expand } = useViewer();
-  const hasBody = node.kind !== 'activity' || node.slots.some((s) => s.children.length > 0);
+  const assignments = node.kind === 'activity' && node.assignments?.length ? node.assignments : undefined;
+  const hasBody = node.kind !== 'activity' || node.slots.some((s) => s.children.length > 0) || !!assignments;
   const [open, setOpen] = useState(depth < 8);
   useEffect(() => {
     if (expand.n > 0) setOpen(expand.open);
@@ -88,13 +123,14 @@ export function ActivityBlock({ node, depth = 0 }: { node: ActivityNode; depth?:
           </button>
         )}
       </div>
-      {summary && <div className="sbv-act__summary">{summary}</div>}
+      {summary && !(assignments && open) && <div className="sbv-act__summary">{summary}</div>}
       {node.annotation && <div className="sbv-act__note">{node.annotation}</div>}
       {hasBody && open && (
         <div className="sbv-act__body">
           {node.kind === 'flowchart' && <FlowchartView fc={node} depth={depth} />}
           {node.kind === 'stateMachine' && <StateMachineView sm={node} depth={depth} />}
-          {node.kind === 'activity' && (
+          {assignments && <AssignRows rows={assignments} />}
+          {node.kind === 'activity' && node.slots.length > 0 && (
             <div className={split ? 'sbv-slots sbv-slots--split' : 'sbv-slots'}>
               {node.slots.map((slot) => (
                 <section key={slot.name || '_'} className="sbv-slot" aria-label={slot.name || undefined}>
@@ -256,7 +292,7 @@ export function PropertiesPanel({ selection }: { selection?: Selection }) {
       </aside>
     );
   }
-  const entries = Object.entries(selection.properties);
+  const entries = Object.entries(selection.properties).filter(([k]) => !(selection.assignments && k === 'AssignOperations'));
   return (
     <aside className="sbv-panel" aria-label="Properties">
       <h2 className="sbv-panel__title">{selection.title}</h2>
@@ -274,12 +310,36 @@ export function PropertiesPanel({ selection }: { selection?: Selection }) {
           {entries.map(([k, v]) => (
             <div key={k} className="sbv-props__row">
               <dt>{k}</dt>
-              <dd><code className="sbv-code">{v.split('\n').map(formatExpression).join('\n')}</code></dd>
+              <dd>
+                {v.includes('\n') ? (
+                  <ul className="sbv-lines">
+                    {v.split('\n').map((line, i) => <li key={i}><code className="sbv-code">{formatExpression(line)}</code></li>)}
+                  </ul>
+                ) : (
+                  <code className="sbv-code">{formatExpression(v)}</code>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
       ) : (
-        <p className="sbv-muted">No properties set.</p>
+        !selection.assignments?.length && <p className="sbv-muted">No properties set.</p>
+      )}
+      {selection.assignments && selection.assignments.length > 0 && (
+        <>
+          <h3 className="sbv-panel__sub">Assignments <span className="sbv-count">{selection.assignments.length}</span></h3>
+          <table className="sbv-table sbv-assign-table">
+            <thead><tr><th>To</th><th>Value</th></tr></thead>
+            <tbody>
+              {selection.assignments.map((r, i) => (
+                <tr key={i}>
+                  <td><code className="sbv-code">{formatExpression(r.to)}</code></td>
+                  <td><code className="sbv-code">{formatExpression(r.value)}</code></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
       )}
       {selection.variables && selection.variables.length > 0 && (
         <>

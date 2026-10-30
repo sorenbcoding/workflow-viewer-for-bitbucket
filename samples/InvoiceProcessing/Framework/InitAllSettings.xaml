@@ -3,7 +3,13 @@
     <x:Property Name="out_Config" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
   </x:Members>
   <mva:VisualBasic.Settings>
-    <x:Null />
+    <mva:VisualBasicSettings>
+      <mva:VisualBasicSettings.ImportReferences>
+        <mva:VisualBasicImportReference Assembly="System.Data" Import="System.Data" />
+        <mva:VisualBasicImportReference Assembly="System.Private.CoreLib" Import="System.Collections.Generic" />
+        <mva:VisualBasicImportReference Assembly="System.Private.CoreLib" Import="System" />
+      </mva:VisualBasicSettings.ImportReferences>
+    </mva:VisualBasicSettings>
   </mva:VisualBasic.Settings>
   <Sequence DisplayName="Init All Settings" sap2010:Annotation.AnnotationText="Reads Config.xlsx into a dictionary.&#xA;Settings and Constants sheets are read the same way." sap2010:WorkflowViewState.IdRef="Sequence_1">
     <Sequence.Variables>
@@ -56,5 +62,35 @@
         </ActivityAction>
       </ui:ForEachRow.Body>
     </ui:ForEachRow>
+    <ui:MultipleAssign DisplayName="Set defaults" sap2010:WorkflowViewState.IdRef="MultipleAssign_1">
+      <ui:MultipleAssign.AssignOperations>
+        <scg:List x:TypeArguments="ui:AssignOperation" Capacity="4">
+          <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_1">
+            <ui:AssignOperation.To>
+              <OutArgument x:TypeArguments="x:Object">[out_Config("RetryNumber")]</OutArgument>
+            </ui:AssignOperation.To>
+            <ui:AssignOperation.Value>
+              <InArgument x:TypeArguments="x:Object">[3]</InArgument>
+            </ui:AssignOperation.Value>
+          </ui:AssignOperation>
+          <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_2">
+            <ui:AssignOperation.To>
+              <OutArgument x:TypeArguments="x:Object">[out_Config("Queue")]</OutArgument>
+            </ui:AssignOperation.To>
+            <ui:AssignOperation.Value>
+              <InArgument x:TypeArguments="x:Object">["Invoices"]</InArgument>
+            </ui:AssignOperation.Value>
+          </ui:AssignOperation>
+          <ui:AssignOperation sap2010:WorkflowViewState.IdRef="AssignOperation_3">
+            <ui:AssignOperation.To>
+              <OutArgument x:TypeArguments="x:String">[configPath]</OutArgument>
+            </ui:AssignOperation.To>
+            <ui:AssignOperation.Value>
+              <InArgument x:TypeArguments="x:String">[configPath.Trim]</InArgument>
+            </ui:AssignOperation.Value>
+          </ui:AssignOperation>
+        </scg:List>
+      </ui:MultipleAssign.AssignOperations>
+    </ui:MultipleAssign>
   </Sequence>
 </Activity>
