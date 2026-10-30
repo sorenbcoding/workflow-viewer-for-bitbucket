@@ -270,3 +270,48 @@ describe('project.json and invoke tree', () => {
     expect(() => parseProjectJson('{')).toThrow(/not valid JSON/);
   });
 });
+
+describe('full activity types', () => {
+  const process = load('Process.xaml');
+  const steps = slot(slot(slot(process.root, '').children[0], 'Try').children[0], '').children;
+
+  it('reads exact namespaces from clr-namespace prefixes', () => {
+    const init = load('Framework/InitAllSettings.xaml');
+    const excel = slot(slot(slot(init.root, '').children[1], 'Body').children[0], '').children[0];
+    expect(excel.fullType).toBe('UiPath.Excel.Activities.Business.ReadRangeX');
+    expect(excel.fullTypeInferred).toBe(false);
+    const unknown = slot(steps[3], 'Case Credit').children[0];
+    expect(unknown.fullType).toBe('Acme.Synthetic.Activities.PostToLedger');
+  });
+
+  it('infers namespaces from schema URIs', () => {
+    expect(process.root?.fullType).toBe('System.Activities.Statements.Sequence');
+    expect(process.root?.fullTypeInferred).toBe(true);
+    expect(steps[0].fullType).toBe('UiPath.Core.Activities.InvokeWorkflowFile');
+    const click = slot(slot(steps[2], 'Body').children[0], '').children[1];
+    expect(click.fullType).toBe('UiPath.UIAutomationNext.Activities.NClick');
+  });
+
+  it('appends type arguments for generic activities', () => {
+    const totals = load('Framework/CalculateTotals.xaml');
+    expect(slot(totals.root, '').children[0].fullType).toBe('UiPath.Core.Activities.ForEach<Decimal>');
+  });
+});
+
+describe('nested property values', () => {
+  const process = load('Process.xaml');
+  const steps = slot(slot(slot(process.root, '').children[0], 'Try').children[0], '').children;
+  const filter = steps[4];
+
+  it('shows filter rows with column, operator and operand', () => {
+    expect(filter.localType).toBe('FilterDataTable');
+    expect(filter.properties.Filters).toBe('"Age" > 18\nOr "Name" not empty');
+    expect(filter.properties.SelectColumns).toBe('["Name"]\n["Age"]');
+  });
+
+  it('only strips brackets that wrap the whole expression', () => {
+    expect(formatExpression('["a"] [18]')).toBe('["a"] [18]');
+    expect(formatExpression('[x]')).toBe('x');
+    expect(formatExpression('[row("[a]")]')).toBe('row("[a]")');
+  });
+});

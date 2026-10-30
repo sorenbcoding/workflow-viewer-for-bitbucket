@@ -15,6 +15,9 @@ export interface Selection {
   id: string;
   title: string;
   type: string;
+  /** Full .NET type, e.g. `UiPath.Core.Activities.LogMessage`. */
+  fullType?: string;
+  fullTypeInferred?: boolean;
   annotation?: string;
   properties: Record<string, string>;
   variables?: WorkflowVariable[];
@@ -24,6 +27,8 @@ export const selectionOf = (n: ActivityNode): Selection => ({
   id: n.id,
   title: n.displayName,
   type: n.type,
+  fullType: n.fullType,
+  fullTypeInferred: n.fullTypeInferred,
   annotation: n.annotation,
   properties: n.properties,
   variables: n.variables,
@@ -147,6 +152,7 @@ function FlowchartView({ fc, depth }: { fc: FlowchartActivity; depth: number }) 
         id: n.id,
         title: n.displayName,
         type: n.kind === 'decision' ? 'FlowDecision' : 'FlowSwitch',
+        fullType: `System.Activities.Statements.${n.kind === 'decision' ? 'FlowDecision' : 'FlowSwitch'}`,
         annotation: n.annotation,
         properties: n.expression ? { [n.kind === 'decision' ? 'Condition' : 'Expression']: n.expression } : {},
       });
@@ -197,7 +203,14 @@ function StateMachineView({ sm, depth }: { sm: StateMachineActivity; depth: numb
   const onSelect = (id: string) => {
     setCurrent(id);
     const s = sm.states.find((x) => x.id === id);
-    if (s) select({ id: s.id, title: s.displayName, type: s.isFinal ? 'Final State' : 'State', annotation: s.annotation, properties: {} });
+    if (s) select({
+        id: s.id,
+        title: s.displayName,
+        type: s.isFinal ? 'Final State' : 'State',
+        fullType: 'System.Activities.Statements.State',
+        annotation: s.annotation,
+        properties: {},
+      });
   };
 
   return (
@@ -248,13 +261,20 @@ export function PropertiesPanel({ selection }: { selection?: Selection }) {
     <aside className="sbv-panel" aria-label="Properties">
       <h2 className="sbv-panel__title">{selection.title}</h2>
       <div className="sbv-panel__type">{selection.type}</div>
+      {selection.fullType && (
+        <div className="sbv-panel__fulltype" title={selection.fullTypeInferred ? 'Inferred from the XAML namespace; the package may use a different namespace.' : undefined}>
+          {selection.fullType.split('.').map((part, i) => (
+            <span key={i}>{i > 0 && <>.<wbr /></>}{part}</span>
+          ))}
+        </div>
+      )}
       {selection.annotation && <p className="sbv-act__note">{selection.annotation}</p>}
       {entries.length > 0 ? (
         <dl className="sbv-props">
           {entries.map(([k, v]) => (
             <div key={k} className="sbv-props__row">
               <dt>{k}</dt>
-              <dd><code className="sbv-code">{formatExpression(v)}</code></dd>
+              <dd><code className="sbv-code">{v.split('\n').map(formatExpression).join('\n')}</code></dd>
             </div>
           ))}
         </dl>

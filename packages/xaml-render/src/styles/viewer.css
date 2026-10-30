@@ -137,7 +137,8 @@
 /* Properties panel */
 .sbv-panel { position: sticky; top: var(--sb-space-4); border: var(--sb-border-width) solid var(--sb-slate-300); border-radius: var(--sb-radius-md); padding: var(--sb-space-3); max-height: calc(100vh - 32px); overflow: auto; }
 .sbv-panel__title { font-size: var(--sb-text-subhead); font-weight: 600; margin: 0; word-break: break-word; }
-.sbv-panel__type { font-family: var(--sb-font-mono); font-size: var(--sb-text-caption); color: var(--sb-slate-600); margin-bottom: var(--sb-space-2); }
+.sbv-panel__type { font-family: var(--sb-font-mono); font-size: var(--sb-text-caption); color: var(--sb-slate-600); }
+.sbv-panel__fulltype { font-family: var(--sb-font-mono); font-size: var(--sb-text-caption); color: var(--sb-slate-600); overflow-wrap: break-word; user-select: text; margin-bottom: var(--sb-space-2); }
 .sbv-panel__sub { font-size: var(--sb-text-body); font-weight: 600; margin: var(--sb-space-4) 0 var(--sb-space-2); }
 .sbv-props { margin: var(--sb-space-2) 0 0; }
 .sbv-props__row { padding: var(--sb-space-1) 0; border-bottom: var(--sb-border-width) solid var(--sb-slate-300); }

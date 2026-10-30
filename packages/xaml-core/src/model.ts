@@ -60,6 +60,10 @@ interface ActivityBase {
   viewState?: ViewState;
   /** False when Studio stored the activity collapsed. */
   isExpanded?: boolean;
+  /** Full .NET type as Studio shows it, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. */
+  fullType?: string;
+  /** True when the namespace was looked up from a shared schema URI instead of read from a `clr-namespace` mapping. */
+  fullTypeInferred?: boolean;
 }
 
 export interface GenericActivity extends ActivityBase {
