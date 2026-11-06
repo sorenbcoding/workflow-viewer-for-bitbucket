@@ -1,5 +1,6 @@
 # Workflow Viewer for Bitbucket
 
+Owner: sorenbcoding
 Brand: sorenb-brand
 Category: app (slate accent, ID `SorenB.WorkflowViewer`)
 
@@ -13,3 +14,5 @@ npm-workspaces monorepo:
 Rules:
 - `samples/` holds synthetic workflows only. Never commit workflows from employer or customer repositories.
 - Run `npm test`, `npm run typecheck`, and `python ~/.claude/skills/sorenb-brand/scripts/brand_check.py . --category app` before committing.
+- CI (`.github/workflows/ci.yml`) runs `npm ci`, typecheck, tests, `npm run build:forge` and `npm audit --omit=dev --audit-level=high` on every pull request. The brand check runs locally only.
+- Releases: none yet. The Forge app is deployed by hand with `npm run deploy` in `apps/forge-app`.

@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [Unreleased]
 
 ### Added
+- CI on GitHub Actions (typecheck, tests, Forge build, production dependency audit) and Dependabot for npm and actions.
 - The properties panel shows the full .NET type under the XAML tag, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. Types from shared schema URIs are inferred and marked with a tooltip.
 - Multiple Assign shows one `To = Value` row per assignment on the canvas (first 8, with Show all) and as a To/Value table in the properties panel.
 - A collapsed Imports section lists the workflow's imported namespaces, read from `NamespacesForImplementation` or the older `VisualBasic.Settings` form.
@@ -13,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
 
 ### Fixed
+- High-severity advisory in `prosemirror-view`, pulled in by `@forge/bridge`, cleared with an npm override. The package is not part of the app bundle.
 - Properties that hold lists of objects, such as Filter Data Table filters, lost their operators and showed cut-off text such as `"Age"] [18`.
 - `formatExpression` no longer strips brackets that do not wrap the whole expression.
 
