@@ -43,8 +43,21 @@ function convert(raw: RawNode): XElement | string | undefined {
   return { name, attrs, children, text };
 }
 
-/** Parses an XML string into a tree. Throws with a readable message when the XML is malformed. */
+/** Largest file the viewer parses, in characters (about bytes for XAML). Studio workflows are far smaller. */
+export const MAX_XAML_LENGTH = 5 * 1024 * 1024;
+
+/**
+ * Parses an XML string into a tree. Throws with a readable message when the XML is malformed, too large,
+ * or declares a DOCTYPE. Studio never writes a DOCTYPE; refusing it means no custom entities can be defined.
+ */
 export function parseXml(source: string): XElement {
+  if (source.length > MAX_XAML_LENGTH) {
+    const mb = (source.length / 1024 / 1024).toFixed(1);
+    throw new Error(`Could not read the XAML — the file is ${mb} MB, above the viewer's 5 MB limit. Open it in Studio instead.`);
+  }
+  if (/<!DOCTYPE/i.test(source)) {
+    throw new Error('Could not read the XAML — the file declares a DOCTYPE, which Studio workflows never contain. Check that it is a UiPath workflow file.');
+  }
   const cleaned = source.replace(/^﻿/, '');
   let raw: RawNode[];
   try {
