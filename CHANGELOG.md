@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
 
 ### Fixed
+- High-severity advisory in `prosemirror-view`, pulled in by `@forge/bridge`, cleared with an npm override. The package is not part of the app bundle.
 - Properties that hold lists of objects, such as Filter Data Table filters, lost their operators and showed cut-off text such as `"Age"] [18`.
 - `formatExpression` no longer strips brackets that do not wrap the whole expression.
 
