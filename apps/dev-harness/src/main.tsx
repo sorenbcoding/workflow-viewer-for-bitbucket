@@ -23,6 +23,9 @@ const memorySource = (files: Record<string, string>): RepoSource => ({
   },
 });
 
+// `?maxFiles=N` limits how many workflows the overview reads at once, to try the on-demand reading.
+const MAX_FILES = Number(new URLSearchParams(location.search).get('maxFiles')) || undefined;
+
 type View = { kind: 'project'; source: RepoSource; label: string } | { kind: 'file'; path: string; doc?: WorkflowDocument; error?: string };
 
 function openFile(path: string, text: string): View {
@@ -104,7 +107,7 @@ function App() {
       </nav>
       <div className="sbv-root harness__main">
         {view.kind === 'project' ? (
-          <ProjectOverview key={view.label} source={view.source} />
+          <ProjectOverview key={view.label} source={view.source} maxFiles={MAX_FILES} />
         ) : view.doc ? (
           <WorkflowView key={view.path} doc={view.doc} path={view.path} onOpenInvoke={(t) => SAMPLES[`InvoiceProcessing/${t}`] && setView(openFile(`InvoiceProcessing/${t}`, SAMPLES[`InvoiceProcessing/${t}`]))} />
         ) : (
