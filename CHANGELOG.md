@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [Unreleased]
 
 ### Added
+- Draft Atlassian Marketplace listing (`docs/marketplace-listing.md`) with hero image and screenshots in `docs/marketplace/`.
 - SECURITY.md, PRIVACY.md and SUPPORT.md, linked from the README. Private vulnerability reporting is enabled on GitHub.
 - CI on GitHub Actions (typecheck, tests, Forge build, production dependency audit) and Dependabot for npm and actions.
 - The properties panel shows the full .NET type under the XAML tag, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. Types from shared schema URIs are inferred and marked with a tooltip.
