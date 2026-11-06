@@ -36,7 +36,7 @@ interface Paged<T> {
 }
 
 /** Follows Bitbucket pagination. `next` links are absolute API URLs, so only their path is passed on. */
-async function getAll<T>(first: string, limit = 50): Promise<T[]> {
+async function getAll<T>(first: string, limit = 20): Promise<T[]> {
   const all: T[] = [];
   let url: string | undefined = first;
   for (let page = 0; url && page < limit; page++) {

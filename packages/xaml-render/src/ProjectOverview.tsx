@@ -25,6 +25,8 @@ interface Props {
   toolbar?: ReactNode;
   /** Number of files read in parallel. */
   concurrency?: number;
+  /** Most workflows read when the overview opens; the rest are read when opened. Entry points are read first. */
+  maxFiles?: number;
 }
 
 interface LoadedProject {
@@ -34,6 +36,8 @@ interface LoadedProject {
   /** Project-relative workflow paths to parsed documents. */
   workflows: Map<string, WorkflowDocument>;
   errors: Map<string, string>;
+  /** Project-relative paths of workflows not read yet because of `maxFiles`. */
+  unread: string[];
 }
 
 const IGNORED = /(^|\/)\.(local|objects|settings|screenshots|tmh|templates)\//;
@@ -46,33 +50,36 @@ async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<v
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
 }
 
-function InvokeTree({ node, onOpen }: { node: InvokeTreeNode; onOpen: (path: string) => void }) {
+function InvokeTree({ node, onOpen, unread }: { node: InvokeTreeNode; onOpen: (path: string) => void; unread: Set<string> }) {
+  const notRead = !node.exists && unread.has(node.path.toLowerCase());
   return (
     <li>
-      {node.exists && !node.isCycle ? (
+      {(node.exists || notRead) && !node.isCycle ? (
         <button type="button" className="sbv-link" onClick={() => onOpen(node.path)}>{node.path}</button>
       ) : (
         <code className="sbv-code">{node.path}</code>
       )}
       {node.isDynamic && <span className="sbv-tag">Dynamic path</span>}
-      {!node.exists && !node.isDynamic && <span className="sbv-tag sbv-tag--error">Missing file</span>}
+      {notRead && <span className="sbv-tag" title="Not read yet. Open it to read it and see what it invokes.">Not read</span>}
+      {!node.exists && !notRead && !node.isDynamic && <span className="sbv-tag sbv-tag--error">Missing file</span>}
       {node.isCycle && <span className="sbv-tag">Recursive</span>}
       {node.children.length > 0 && (
         <ul className="sbv-tree">
-          {node.children.map((c, i) => <InvokeTree key={`${c.path}-${i}`} node={c} onOpen={onOpen} />)}
+          {node.children.map((c, i) => <InvokeTree key={`${c.path}-${i}`} node={c} onOpen={onOpen} unread={unread} />)}
         </ul>
       )}
     </li>
   );
 }
 
-export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
+export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 300 }: Props) {
   const [files, setFiles] = useState<string[]>();
   const [listError, setListError] = useState<string>();
   const [root, setRoot] = useState<string>();
   const [loaded, setLoaded] = useState<LoadedProject>();
   const [progress, setProgress] = useState<[number, number]>([0, 0]);
   const [openPath, setOpenPath] = useState<string>();
+  const [openError, setOpenError] = useState<string>();
 
   useEffect(() => {
     let cancelled = false;
@@ -105,9 +112,9 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
     const xaml = files.filter(
       (p) => p.toLowerCase().endsWith('.xaml') && p.startsWith(prefix) && !IGNORED.test(p) && !nested.some((n) => p.startsWith(`${n}/`)),
     );
-    const result: LoadedProject = { root, workflows: new Map(), errors: new Map() };
+    const result: LoadedProject = { root, workflows: new Map(), errors: new Map(), unread: [] };
     setLoaded(undefined);
-    setProgress([0, xaml.length]);
+    setProgress([0, Math.min(xaml.length, maxFiles)]);
     (async () => {
       if (projectRoots.includes(root)) {
         try {
@@ -116,8 +123,13 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
           result.projectError = (e as Error).message;
         }
       }
+      // Entry points first, so the call tree is complete as far as the limit allows.
+      const entries = new Set((result.project?.entryPoints ?? []).map((e) => joinPath(root, e.filePath).toLowerCase()));
+      const ordered = [...xaml].sort((a, b) => Number(entries.has(b.toLowerCase())) - Number(entries.has(a.toLowerCase())) || a.localeCompare(b));
+      const toRead = ordered.slice(0, maxFiles);
+      result.unread = ordered.slice(maxFiles).map((p) => p.slice(prefix.length));
       let done = 0;
-      await mapLimit(xaml, concurrency, async (p) => {
+      await mapLimit(toRead, concurrency, async (p) => {
         const rel = p.slice(prefix.length);
         try {
           result.workflows.set(rel, parseWorkflow(await source.readText(p)));
@@ -125,14 +137,31 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
           result.errors.set(rel, (e as Error).message);
         }
         done += 1;
-        if (!cancelled) setProgress([done, xaml.length]);
+        if (!cancelled) setProgress([done, toRead.length]);
       });
       if (!cancelled) setLoaded(result);
     })();
     return () => {
       cancelled = true;
     };
-  }, [files, root, source, projectRoots, concurrency]);
+  }, [files, root, source, projectRoots, concurrency, maxFiles]);
+
+  /** Opens a workflow, reading it first when it was left out by `maxFiles`. */
+  const open = async (path: string) => {
+    setOpenError(undefined);
+    if (!loaded) return;
+    const known = [...loaded.workflows.keys()].find((k) => k.toLowerCase() === path.toLowerCase());
+    if (known) return setOpenPath(known);
+    const pending = loaded.unread.find((u) => u.toLowerCase() === path.toLowerCase());
+    if (!pending) return setOpenPath(path);
+    try {
+      const doc = parseWorkflow(await source.readText(joinPath(loaded.root, pending)));
+      setLoaded({ ...loaded, workflows: new Map(loaded.workflows).set(pending, doc), unread: loaded.unread.filter((u) => u !== pending) });
+      setOpenPath(pending);
+    } catch (e) {
+      setOpenError((e as Error).message);
+    }
+  };
 
   const analysis = useMemo(() => {
     if (!loaded) return undefined;
@@ -157,6 +186,7 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
       }));
     return { trees, rows };
   }, [loaded]);
+  const unreadSet = useMemo(() => new Set((loaded?.unread ?? []).map((u) => u.toLowerCase())), [loaded]);
 
   if (listError) return <p className="sbv-error" role="alert">{listError}</p>;
   if (!files) return <p className="sbv-muted" role="status">Reading the repository file list…</p>;
@@ -168,7 +198,7 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
         key={openPath}
         doc={doc}
         path={joinPath(loaded.root, openPath)}
-        onOpenInvoke={(target) => setOpenPath([...loaded.workflows.keys()].find((k) => k.toLowerCase() === target.toLowerCase()) ?? target)}
+        onOpenInvoke={(target) => void open(target)}
         actions={<button type="button" className="sbv-btn" onClick={() => setOpenPath(undefined)}>Back to project</button>}
       />
     );
@@ -211,32 +241,45 @@ export function ProjectOverview({ source, toolbar, concurrency = 6 }: Props) {
           </header>
           {project?.description && <p>{project.description}</p>}
           {loaded.projectError && <p className="sbv-error" role="alert">{loaded.projectError}</p>}
+          {openError && <p className="sbv-error" role="alert">{openError}</p>}
+          {loaded.unread.length > 0 && (
+            <p className="sbv-warning" role="status">
+              Read {loaded.workflows.size + loaded.errors.size} of {loaded.workflows.size + loaded.errors.size + loaded.unread.length} workflows — the
+              project is larger than the overview reads at once. Open a workflow marked Not read to read it.
+            </p>
+          )}
 
           {analysis && analysis.trees.length > 0 && (
             <section className="sbv-card">
               <h2 className="sbv-card__title">Entry points and invoked workflows</h2>
               <ul className="sbv-tree sbv-tree--root">
-                {analysis.trees.map((t) => <InvokeTree key={t.path} node={t} onOpen={setOpenPath} />)}
+                {analysis.trees.map((t) => <InvokeTree key={t.path} node={t} onOpen={(p) => void open(p)} unread={unreadSet} />)}
               </ul>
             </section>
           )}
 
           <section className="sbv-card">
-            <h2 className="sbv-card__title">Workflows <span className="sbv-count">{loaded.workflows.size + loaded.errors.size}</span></h2>
+            <h2 className="sbv-card__title">Workflows <span className="sbv-count">{loaded.workflows.size + loaded.errors.size + loaded.unread.length}</span></h2>
             <table className="sbv-table">
               <thead><tr><th>File</th><th>Arguments</th><th>Invokes</th><th>Status</th></tr></thead>
               <tbody>
                 {analysis?.rows.map((r) => (
                   <tr key={r.path}>
-                    <td><button type="button" className="sbv-link" onClick={() => setOpenPath(r.path)}>{r.path}</button></td>
+                    <td><button type="button" className="sbv-link" onClick={() => void open(r.path)}>{r.path}</button></td>
                     <td>{r.doc.arguments.length}</td>
                     <td>{r.invokes}</td>
                     <td>
                       {r.isEntry && <span className="sbv-tag">Entry point</span>}
                       {r.isTest && <span className="sbv-tag">Test case</span>}
-                      {!r.reached && project && <span className="sbv-tag" title="No entry point or test case invokes this workflow with a static path.">Not invoked</span>}
+                      {!r.reached && project && loaded.unread.length === 0 && <span className="sbv-tag" title="No entry point or test case invokes this workflow with a static path.">Not invoked</span>}
                       {r.doc.warnings.length > 0 && <span className="sbv-tag sbv-tag--warning" title={r.doc.warnings.join('\n')}>{r.doc.warnings.length} warning(s)</span>}
                     </td>
+                  </tr>
+                ))}
+                {loaded.unread.map((path) => (
+                  <tr key={path}>
+                    <td><button type="button" className="sbv-link" onClick={() => void open(path)}>{path}</button></td>
+                    <td colSpan={3}><span className="sbv-tag">Not read</span></td>
                   </tr>
                 ))}
                 {[...loaded.errors.entries()].map(([path, message]) => (
