@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [Unreleased]
 
 ### Added
+- SECURITY.md, PRIVACY.md and SUPPORT.md, linked from the README. Private vulnerability reporting is enabled on GitHub.
 - CI on GitHub Actions (typecheck, tests, Forge build, production dependency audit) and Dependabot for npm and actions.
 - The properties panel shows the full .NET type under the XAML tag, e.g. `UiPath.Excel.Activities.Business.ReadRangeX`. Types from shared schema URIs are inferred and marked with a tooltip.
 - Multiple Assign shows one `To = Value` row per assignment on the canvas (first 8, with Show all) and as a To/Value table in the properties panel.
