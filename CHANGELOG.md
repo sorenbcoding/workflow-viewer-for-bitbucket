@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
 
 ### Fixed
+- The workflow overview reads at most 300 workflows when it opens, entry points first. Others are listed as Not read and read when opened. The dev harness accepts `?maxFiles=N` to try this.
 - Files that declare a `DOCTYPE` or are larger than 5 MB are rejected with a clear message instead of being parsed.
 - High-severity advisory in `prosemirror-view`, pulled in by `@forge/bridge`, cleared with an npm override. The package is not part of the app bundle.
 - Properties that hold lists of objects, such as Filter Data Table filters, lost their operators and showed cut-off text such as `"Age"] [18`.
