@@ -216,6 +216,22 @@ describe('robustness', () => {
     expect(() => parseWorkflow('<Activity><Sequence></Activity>')).toThrow(/not well-formed XML/);
   });
 
+  it('rejects a DOCTYPE, so no custom entities can be expanded', () => {
+    const bomb = '<?xml version="1.0"?><!DOCTYPE a [<!ENTITY x "xxxxxxxxxx"><!ENTITY y "&x;&x;&x;&x;">]><Activity>&y;</Activity>';
+    expect(() => parseWorkflow(bomb)).toThrow(/declares a DOCTYPE/);
+    expect(() => parseWorkflow('<!doctype html><Activity />')).toThrow(/declares a DOCTYPE/);
+  });
+
+  it('rejects files above the size limit', () => {
+    const big = `<Activity>${' '.repeat(5 * 1024 * 1024)}</Activity>`;
+    expect(() => parseWorkflow(big)).toThrow(/above the viewer's 5 MB limit/);
+  });
+
+  it('still decodes the predefined and numeric entities', () => {
+    const doc = parseWorkflow('<Activity xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"><Sequence DisplayName="a &lt; b &amp; &quot;c&quot;&#xA;d" /></Activity>');
+    expect(doc.root?.displayName).toBe('a < b & "c"\nd');
+  });
+
   it('handles an empty workflow and a byte order mark', () => {
     const doc = parseWorkflow('﻿<Activity x:Class="Empty" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" />');
     expect(doc.className).toBe('Empty');
