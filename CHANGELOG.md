@@ -6,6 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 ## [Unreleased]
 
 ### Added
+- END-USER-TERMS.md for the Marketplace listing (free, MIT-licensed, provided as is). The listing draft and images now meet Atlassian's sizes and text limits.
 - Draft Atlassian Marketplace listing (`docs/marketplace-listing.md`) with hero image and screenshots in `docs/marketplace/`.
 - SECURITY.md, PRIVACY.md and SUPPORT.md, linked from the README. Private vulnerability reporting is enabled on GitHub.
 - CI on GitHub Actions (typecheck, tests, Forge build, production dependency audit) and Dependabot for npm and actions.
