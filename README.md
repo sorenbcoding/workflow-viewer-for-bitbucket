@@ -8,8 +8,8 @@
 
 Workflow Viewer for Bitbucket shows UiPath `.xaml` workflows in Bitbucket Cloud as a read-only, compact designer view. You can review sequences, flowcharts and state machines without opening Studio.
 
-- **File viewer:** open any `.xaml` file in the repository source view and pick **Workflow Viewer** from the file header menu.
-- **Workflow overview:** a repository page that reads `project.json`. It shows entry points, the tree of invoked workflows, workflows no entry point calls, and dependencies.
+- **File viewer:** open any `.xaml` file in the repository source view and pick **Workflow Viewer** from the dropdown at the right end of the file header.
+- **Workflow overview:** a repository page, under **Apps** in the repository menu, that reads `project.json`. It shows entry points, the tree of invoked workflows, workflows no entry point calls, and dependencies.
 - **Read-only, as the current user:** the app calls the Bitbucket REST API with the viewer's own permissions, using the `read:repository:bitbucket` scope only. It stores nothing.
 
 ## Install
@@ -31,6 +31,11 @@ forge register                    # once, writes your app id into manifest.yml
 npm run deploy                    # builds the UI and runs forge deploy
 forge install --product bitbucket # pick your workspace
 ```
+
+After installing, the app appears in two places:
+
+- **Workflow Viewer:** open a `.xaml` file in the repository's **Source** view. Use the dropdown at the right end of the file header, the bar above the code that shows the file path, and choose **Workflow Viewer**. It is not in the Source / Diff / History dropdown at the top of the page.
+- **Workflow overview:** in the repository's left menu, expand **Apps** near the bottom. The page is listed under **Workflow Viewer for Bitbucket**. A development install shows `(default)` after the names.
 
 To roll out a new version, run `npm run deploy` again; installed workspaces update automatically. For production, use `forge deploy -e production` and `forge install -e production`. To install in other workspaces without a Marketplace listing, use the install link under **Distribution** in the [Developer console](https://developer.atlassian.com/console/myapps/).
 
