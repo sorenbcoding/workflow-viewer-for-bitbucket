@@ -39,7 +39,7 @@ Changes to this policy are listed in [CHANGELOG.md](CHANGELOG.md), and the date 
 
 ## Contact
 
-Questions about privacy: open an issue at [github.com/sorenbcoding/workflow-viewer-for-bitbucket/issues](https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/issues). Report security problems privately as described in [SECURITY.md](SECURITY.md).
+Questions about privacy: email [workflow-viewer-for-bitbucket@outlook.com](mailto:workflow-viewer-for-bitbucket@outlook.com), or open an issue at [github.com/sorenbcoding/workflow-viewer-for-bitbucket/issues](https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/issues). Report security problems privately as described in [SECURITY.md](SECURITY.md).
 
 ---
 
