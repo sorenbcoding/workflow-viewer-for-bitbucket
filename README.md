@@ -121,6 +121,7 @@ The overview reads every `.xaml` file under the folder that holds `project.json`
 - [SUPPORT.md](SUPPORT.md): how to get help and report bugs.
 - [SECURITY.md](SECURITY.md): how to report a vulnerability privately, and response times.
 - [PRIVACY.md](PRIVACY.md): what the app reads. It stores and sends nothing.
+- [END-USER-TERMS.md](END-USER-TERMS.md): terms for using the app from the Atlassian Marketplace. It is free, MIT-licensed and provided as is.
 
 ## Changelog
 
