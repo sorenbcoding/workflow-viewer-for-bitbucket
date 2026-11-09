@@ -78,8 +78,11 @@ All screenshots come from the dev harness and use only the synthetic sample proj
 | --- | --- | --- |
 | Partner name | Søren Schytz Birk | 17 / 40 |
 | Description | Søren Schytz Birk is a UiPath developer and UiPath Community MVP who builds open-source tools that help automation teams review and maintain their UiPath projects. All tools are published with their source code at github.com/sorenbcoding. | 238 / 750 |
-| Partner logo | 144 × 144 px, transparent background. Suggest the SorenB master mark from the brand kit. | |
+| Partner logo | `docs/marketplace/partner-logo-144.png`: the SorenB master mark, 144 × 144 px, transparent background | |
 | Security contact email | workflow-viewer-for-bitbucket@outlook.com | |
+| Contact email | workflow-viewer-for-bitbucket@outlook.com (keep the private address for login and billing only) | |
+
+The vendor is the developer space **Søren Schytz Birk**, which owns the app. The `sorenbcoding` space is also published; do not use it as vendor. After publishing, the profile fields above are edited in the Marketplace, not in the developer console: marketplace.atlassian.com → avatar → **Manage partner account** → **Søren Schytz Birk** → partner profile and contacts.
 
 ## Links
 
@@ -125,12 +128,18 @@ Atlassian checks uniqueness against existing listings during review.
 
 ## Before submitting
 
-- [ ] Register in the Atlassian Developer Community and create the partner profile. Partner verification is a prerequisite for review.
-- [x] Add a monitored security contact email to SECURITY.md (workflow-viewer-for-bitbucket@outlook.com).
-- [ ] Enter the same address as security contact in the partner profile.
-- [ ] In the developer console, enable sharing for the app and publish the developer space.
-- [ ] Deploy to production: `forge deploy -e production`.
-- [ ] Submit at marketplace.atlassian.com/manage/apps/create and accept the Marketplace Partner Agreement.
+Done:
+- [x] Security contact email in SECURITY.md and PRIVACY.md (workflow-viewer-for-bitbucket@outlook.com).
+- [x] Sharing enabled in the developer console (distribution status: Sharing, product: Bitbucket).
+- [x] Developer space **Søren Schytz Birk** published, and the app transferred into it. App ID unchanged.
+- [x] Deployed to production (`forge deploy -e production`). The production installation link is on the Distribution page.
+
+Still open:
+- [ ] Sign in once at community.developer.atlassian.com with the personal Atlassian account.
+- [ ] Partner profile for **Søren Schytz Birk**: name, description and logo from this file, and the Outlook address as contact and security contact.
+- [ ] Partner verification, if the partner account asks for it.
+- [ ] Get Atlassian support's answer on how to create the informational listing for a Bitbucket Forge app. The "publish a new app" form offers only Compass, Confluence and Jira for Forge apps. Do not pick one of those, and do not use the "App URL" (Connect) route.
+- [ ] Submit the listing as support describes, and accept the Marketplace Partner Agreement.
 - [ ] Fill in the Privacy and Security tab with the answers above.
 - [ ] Expect 1 to 3 weeks for review, often with a few rounds of questions.
 
