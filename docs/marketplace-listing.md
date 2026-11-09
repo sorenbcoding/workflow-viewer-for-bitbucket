@@ -1,52 +1,96 @@
 # Marketplace listing: Workflow Viewer for Bitbucket
 
-Draft for the Atlassian Marketplace. The app is free and uses an informational listing, which the Forge listing guide describes for Bitbucket Forge apps. The text follows the SorenB brand template, adapted from UiPath's Marketplace to Atlassian's.
+Draft for the Atlassian Marketplace, checked against Atlassian's listing requirements on 9 November 2026. Bitbucket Forge apps use an informational listing: the listing makes the app discoverable, and installation stays with the developer-console install link. The app is free.
 
-## Basics
+Lengths are counted in characters. The draft is generated so that no field exceeds its limit.
 
-| Field | Value |
-| --- | --- |
-| App name | Workflow Viewer for Bitbucket |
-| Product | Bitbucket Cloud |
-| Platform | Forge (Custom UI, no backend functions) |
-| Price | Free |
-| Partner (publisher) | Søren Schytz Birk |
-| Category accent | Slate |
-| Logo | `branding/workflow-viewer-for-bitbucket-light-128.png` (SVG: `branding/workflow-viewer-for-bitbucket-light.svg`) |
+## Listing text
 
-## Summary
+| Field | Text | Length |
+| --- | --- | --- |
+| App name | Workflow Viewer for Bitbucket | 29 / 60 |
+| Tagline | View UiPath workflows in Bitbucket Cloud as a read-only designer canvas, without opening UiPath Studio. | 103 / 130 |
+| Summary | Adds a Workflow Viewer to .xaml files and a Workflow overview page to repositories, so reviewers can follow UiPath sequences, flowcharts and state machines in Bitbucket. Read-only, as the signed-in user. | 203 / 250 |
+| Release summary | First release: Workflow Viewer for .xaml files and Workflow overview page. | 74 / 80 |
 
-Shows UiPath `.xaml` workflows in Bitbucket Cloud as a read-only, compact designer view, so reviewers can follow an automation without opening Studio.
+### More details (806 / 1000)
 
-## Description
+Workflow Viewer for Bitbucket draws UiPath .xaml files the way Studio's compact designer does: sequences, If, Switch and Try Catch as nested activity blocks, flowcharts and state machines at Studio's saved positions, plus arguments, variables, imports and a properties panel with the full activity type. Invoke Workflow File activities link to the invoked file.
 
-Workflow Viewer for Bitbucket adds a **Workflow Viewer** option to the file menu for `.xaml` files in the repository source view. It draws the workflow the way UiPath Studio's compact designer does:
-- Sequences, If, Switch and Try Catch as nested activity blocks.
-- Flowcharts and state machines on a canvas, at the positions Studio saved.
-- Arguments, variables and imports in collapsible tables.
-- A properties panel with the full activity type, e.g. `UiPath.Core.Activities.FilterDataTable`.
-- Invoke Workflow File activities link to the invoked file.
+The Workflow overview page reads project.json and shows entry points, the call tree, workflows nothing invokes, and dependencies, for any branch.
 
-A **Workflow overview** page in the repository menu reads `project.json` and shows:
-- entry points and the tree of invoked workflows;
-- workflows that no entry point calls;
-- package dependencies, for any branch.
+The app is read-only and asks only for read:repository:bitbucket. Files are read as the signed-in user and are never stored or sent anywhere. Windows, Windows-Legacy and cross-platform projects with VB or C# expressions are supported.
 
-The app is read-only. It requests only `read:repository:bitbucket` and reads files as the signed-in user, so people see only what they can already see in Bitbucket. Nothing is stored or sent anywhere. It supports Windows, Windows-Legacy and cross-platform projects, with VB or C# expressions. Activities from any package are shown with their name, type and properties.
-
-By Søren Schytz Birk · UiPath Community MVP · github.com/sorenbcoding
+Independent open-source project; not affiliated with UiPath.
 
 ## Highlights
 
-| # | Title | Text | Image |
+Atlassian requires exactly three highlights.
+
+### Highlight 1
+
+| Field | Text | Length |
+| --- | --- | --- |
+| Title | Read workflows without Studio | 29 / 50 |
+| Summary | Pick Workflow Viewer from the file header dropdown of any .xaml file. Sequences, conditions and error handling show as activity blocks, with a properties panel for the selected activity. | 186 / 220 |
+| Screenshot caption | Process.xaml with a Filter Data Table selected: its conditions, columns and full type in the properties panel. | 110 / 220 |
+| Screenshot (1840 × 900) | `docs/marketplace/highlight-1-sequence.png` | |
+| Cropped screenshot (580 × 330) | `docs/marketplace/highlight-1-sequence-crop.png` | |
+
+### Highlight 2
+
+| Field | Text | Length |
+| --- | --- | --- |
+| Title | Flowcharts and state machines as Studio drew them | 49 / 50 |
+| Summary | Steps, decisions, switches, states and transitions are drawn at the positions Studio saved, with branch and transition labels. Pan, zoom and click a node to see what it does. | 174 / 220 |
+| Screenshot caption | A flowchart with a Flow Decision selected and its condition shown below the canvas. | 83 / 220 |
+| Screenshot (1840 × 900) | `docs/marketplace/highlight-2-flowchart.png` | |
+| Cropped screenshot (580 × 330) | `docs/marketplace/highlight-2-flowchart-crop.png` | |
+
+### Highlight 3
+
+| Field | Text | Length |
+| --- | --- | --- |
+| Title | See the whole project | 21 / 50 |
+| Summary | The Workflow overview under Apps reads project.json and lists entry points, the tree of invoked workflows, workflows nothing invokes, and dependencies, for any branch. | 167 / 220 |
+| Screenshot caption | The overview of a sample project: entry point, invoke tree with a dynamic path, workflows and dependencies. | 107 / 220 |
+| Screenshot (1840 × 900) | `docs/marketplace/highlight-3-overview.png` | |
+| Cropped screenshot (580 × 330) | `docs/marketplace/highlight-3-overview-crop.png` | |
+
+### Additional media
+
+| Highlight | Explanation | Length | Image |
 | --- | --- | --- | --- |
-| 1 | Read workflows without Studio | Open any `.xaml` file in Bitbucket and see its sequences, conditions and error handling as activity blocks, with a properties panel for the selected activity. | `docs/marketplace/screenshot-2-sequence.png` |
-| 2 | Flowcharts and state machines as Studio drew them | Steps, decisions, switches, states and transitions are drawn at Studio's saved positions, with branch and transition labels. | `docs/marketplace/screenshot-3-flowchart.png`, `docs/marketplace/screenshot-4-state-machine.png` |
-| 3 | See the whole project | The Workflow overview lists entry points, the call tree, workflows nothing invokes, and dependencies, for any branch. | `docs/marketplace/screenshot-1-overview.png` |
+| 2 | A state machine with its states and labelled transitions, and the entry actions of the selected state. | 102 / 220 | `docs/marketplace/highlight-2-extra-state-machine.png` |
 
-Hero image: `docs/marketplace/hero.png`.
+## Logo and banner
 
-All images were captured from the dev harness at 1600 × 900 px using the synthetic sample project in `samples/`. They contain no customer or employer workflows.
+| Asset | Required | File |
+| --- | --- | --- |
+| App logo | 144 × 144 px PNG, transparent or bounded background | `docs/marketplace/app-logo-144.png` |
+| Banner | 1120 × 548 px, with app name, partner name and what it does | `docs/marketplace/banner-1120x548.png` |
+
+All screenshots come from the dev harness and use only the synthetic sample project in `samples/`.
+
+## Partner profile
+
+| Field | Text | Length |
+| --- | --- | --- |
+| Partner name | Søren Schytz Birk | 17 / 40 |
+| Description | Søren Schytz Birk is a UiPath developer and UiPath Community MVP who builds open-source tools that help automation teams review and maintain their UiPath projects. All tools are published with their source code at github.com/sorenbcoding. | 238 / 750 |
+| Partner logo | 144 × 144 px, transparent background. Suggest the SorenB master mark from the brand kit. | |
+| Security contact email | **To be added: a dedicated, monitored address** | |
+
+## Links
+
+| Field | URL |
+| --- | --- |
+| Documentation | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket#readme |
+| Support | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/SUPPORT.md |
+| Privacy policy | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/PRIVACY.md |
+| End user terms | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/END-USER-TERMS.md (choose "No" for the standard agreement and link this file) |
+| Source code | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket |
+| Licence | MIT ([LICENSE](../LICENSE)); it must match the licence reported in the listing |
 
 ## Scopes and hosts (for Atlassian's review)
 
@@ -56,7 +100,7 @@ All images were captured from the dev harness at 1600 × 900 px using the synthe
 
 | Remote host | Data sent |
 | --- | --- |
-| None | The app declares no outbound access (`permissions.external` is empty) and has no backend. |
+| None | The app declares no outbound access and has no backend. Forge reports it as eligible for Runs on Atlassian. |
 
 ## Privacy and Security tab (draft answers)
 
@@ -67,32 +111,40 @@ All images were captured from the dev harness at 1600 × 900 px using the synthe
 | What data does the app process? | Repository file contents (`.xaml`, `project.json`), file list and branch names, in the user's browser only, while the page is open. |
 | Personal data | The publisher receives none. Repository content may contain names, but it never leaves Bitbucket and the user's browser. |
 | Data residency | Not applicable. Nothing is stored. |
-| Encryption | Atlassian's Forge platform serves the app and handles all traffic between it and Bitbucket. The app adds no connections of its own. |
-| Security contact and vulnerability reporting | [SECURITY.md](../SECURITY.md): GitHub private vulnerability reporting, first response within 5 working days. |
+| Security contact | The security contact email above, and [SECURITY.md](../SECURITY.md) |
 | Privacy policy | [PRIVACY.md](../PRIVACY.md) |
 
-## URLs
+## Naming check
 
-| Field | URL |
-| --- | --- |
-| Documentation | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket#readme |
-| Support | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/SUPPORT.md |
-| Privacy policy | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/PRIVACY.md |
-| Security | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/blob/main/SECURITY.md |
-| Source code | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket |
-| Issue tracker | https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/issues |
+"Workflow Viewer for Bitbucket" follows Atlassian's "App name for Product name" pattern (for example "Dropbox Connector for Bitbucket"):
+- 29 characters, title case;
+- does not start with "Bitbucket";
+- no forbidden words (Atlassian, Premium, plugin, beta, add-on, app).
 
-## Disclaimer (last part of the description)
-
-Workflow Viewer for Bitbucket is an independent open-source project by Søren Schytz Birk (github.com/sorenbcoding) and is not affiliated with, endorsed by, or sponsored by UiPath. UiPath and related names are trademarks of UiPath Inc. Bitbucket and Atlassian are trademarks of Atlassian Pty Ltd.
+Atlassian checks uniqueness against existing listings during review.
 
 ## Before submitting
 
-- [ ] Check the image sizes and formats against Atlassian's current "Building your presence on Marketplace" guidance, and resize the logo, hero and screenshots if needed. The 1600 × 900 px size used here has not been checked against it.
-- [ ] Check that the app name is allowed under Atlassian's naming and trademark rules for Marketplace apps ("… for Bitbucket").
-- [ ] Decide on the end user terms. The source is MIT-licensed. Check whether a free informational listing needs separate end user terms or can link the LICENSE.
-- [ ] Deploy to production (`forge deploy -e production`) and confirm the live checks in the security assessment.
-- [ ] Enable sharing for the app and publish the developer space in the developer console.
-- [ ] Create the Marketplace partner profile, then submit at marketplace.atlassian.com/manage/apps/create.
+- [ ] Register in the Atlassian Developer Community and create the partner profile. Partner verification is a prerequisite for review.
+- [ ] Add a monitored security contact email to the partner profile and to SECURITY.md.
+- [ ] In the developer console, enable sharing for the app and publish the developer space.
+- [ ] Deploy to production: `forge deploy -e production`.
+- [ ] Submit at marketplace.atlassian.com/manage/apps/create and accept the Marketplace Partner Agreement.
+- [ ] Fill in the Privacy and Security tab with the answers above.
+- [ ] Expect 1 to 3 weeks for review, often with a few rounds of questions.
 
-Source: [Listing Forge apps on the Atlassian Marketplace](https://developer.atlassian.com/platform/marketplace/listing-forge-apps/), [Creating a Marketplace listing](https://developer.atlassian.com/platform/marketplace/creating-a-marketplace-listing/) and [App approval guidelines](https://developer.atlassian.com/platform/marketplace/app-approval-guidelines/), read on 6 November 2026.
+## Sources
+
+Read on 9 November 2026:
+- [Building your presence on Marketplace](https://developer.atlassian.com/platform/marketplace/building-your-presence-on-marketplace/)
+- [Brand guidelines for Marketplace vendors](https://developer.atlassian.com/platform/marketplace/atlassian-brand-guidelines-for-marketplace-vendors/)
+- [Listing Forge apps](https://developer.atlassian.com/platform/marketplace/listing-forge-apps/)
+- [App approval guidelines](https://developer.atlassian.com/platform/marketplace/app-approval-guidelines/)
+- [Customizable end user agreement](https://developer.atlassian.com/platform/marketplace/list-customizable-end-user-agreement/)
+- [Security requirements for cloud apps](https://developer.atlassian.com/platform/marketplace/security-requirements/)
+
+---
+
+By Søren Schytz Birk · UiPath Community MVP · github.com/sorenbcoding
+
+Workflow Viewer for Bitbucket is an independent open-source project by Søren Schytz Birk (github.com/sorenbcoding) and is not affiliated with, endorsed by, or sponsored by UiPath. UiPath and related names are trademarks of UiPath Inc. Bitbucket and Atlassian are trademarks of Atlassian Pty Ltd.
