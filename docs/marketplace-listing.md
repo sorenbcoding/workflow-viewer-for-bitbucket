@@ -79,7 +79,7 @@ All screenshots come from the dev harness and use only the synthetic sample proj
 | Partner name | Søren Schytz Birk | 17 / 40 |
 | Description | Søren Schytz Birk is a UiPath developer and UiPath Community MVP who builds open-source tools that help automation teams review and maintain their UiPath projects. All tools are published with their source code at github.com/sorenbcoding. | 238 / 750 |
 | Partner logo | 144 × 144 px, transparent background. Suggest the SorenB master mark from the brand kit. | |
-| Security contact email | **To be added: a dedicated, monitored address** | |
+| Security contact email | workflow-viewer-for-bitbucket@outlook.com | |
 
 ## Links
 
@@ -126,7 +126,8 @@ Atlassian checks uniqueness against existing listings during review.
 ## Before submitting
 
 - [ ] Register in the Atlassian Developer Community and create the partner profile. Partner verification is a prerequisite for review.
-- [ ] Add a monitored security contact email to the partner profile and to SECURITY.md.
+- [x] Add a monitored security contact email to SECURITY.md (workflow-viewer-for-bitbucket@outlook.com).
+- [ ] Enter the same address as security contact in the partner profile.
 - [ ] In the developer console, enable sharing for the app and publish the developer space.
 - [ ] Deploy to production: `forge deploy -e production`.
 - [ ] Submit at marketplace.atlassian.com/manage/apps/create and accept the Marketplace Partner Agreement.

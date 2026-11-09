@@ -8,7 +8,10 @@ Only the version currently published on the Atlassian Marketplace, which is the 
 
 ## Report a vulnerability
 
-Report it privately via [GitHub private vulnerability reporting](https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/security/advisories/new). Do not open a public issue.
+Report it privately in one of two ways. Do not open a public issue.
+
+- [GitHub private vulnerability reporting](https://github.com/sorenbcoding/workflow-viewer-for-bitbucket/security/advisories/new)
+- Email: [workflow-viewer-for-bitbucket@outlook.com](mailto:workflow-viewer-for-bitbucket@outlook.com)
 
 Include:
 - what an attacker can do, and what they need, e.g. commit access to a repository;
