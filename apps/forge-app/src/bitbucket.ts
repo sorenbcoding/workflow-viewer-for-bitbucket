@@ -1,5 +1,5 @@
 import { requestBitbucket } from '@forge/bridge';
-import type { RepoSource } from '@sorenb/xaml-render';
+import type { FileListing, RepoSource } from '@sorenb/xaml-render';
 
 /** Identifies a repository by the ids Forge puts in the extension context. */
 export interface RepoRef {
@@ -35,32 +35,41 @@ interface Paged<T> {
   next?: string;
 }
 
-/** Follows Bitbucket pagination. `next` links are absolute API URLs, so only their path is passed on. */
-async function getAll<T>(first: string, limit = 20): Promise<T[]> {
-  const all: T[] = [];
+/**
+ * Follows Bitbucket pagination up to `limit` pages. `next` links are absolute API URLs, so only their path is passed on.
+ * `truncated` is true when Bitbucket had more pages than the limit.
+ */
+async function getAll<T>(first: string, limit: number): Promise<{ values: T[]; truncated: boolean }> {
+  const values: T[] = [];
   let url: string | undefined = first;
   for (let page = 0; url && page < limit; page++) {
     const data = (await (await get(url)).json()) as Paged<T>;
-    all.push(...data.values);
+    values.push(...data.values);
     url = data.next ? data.next.replace(/^https:\/\/api\.bitbucket\.org/, '') : undefined;
   }
-  return all;
+  return { values, truncated: !!url };
 }
 
-/** Lists every `.xaml` and `project.json` file at a commit. */
-export async function listWorkflowFiles(r: RepoRef, ref: string): Promise<string[]> {
+/** Most pages of 100 entries read when listing files: 10,000 entries. */
+const MAX_LIST_PAGES = 100;
+
+/** Lists every `.xaml` and `project.json` file at a commit, and whether the list was cut off. */
+export async function listWorkflowFiles(r: RepoRef, ref: string): Promise<FileListing> {
   const base = `${repoPath(r)}/src/${enc(ref)}/?max_depth=30&pagelen=100`;
   const q = enc('type="commit_file" AND (path ~ ".xaml" OR path ~ "project.json")');
-  let entries: { path: string; type: string }[];
+  let listing: { values: { path: string; type: string }[]; truncated: boolean };
   try {
-    entries = await getAll(`${base}&q=${q}`);
+    listing = await getAll(`${base}&q=${q}`, MAX_LIST_PAGES);
   } catch {
     // Some repositories reject the filter; list everything and filter here instead.
-    entries = await getAll(base);
+    listing = await getAll(base, MAX_LIST_PAGES);
   }
-  return entries
-    .filter((e) => e.type === 'commit_file' && (/\.xaml$/i.test(e.path) || /(^|\/)project\.json$/.test(e.path)))
-    .map((e) => e.path);
+  return {
+    paths: listing.values
+      .filter((e) => e.type === 'commit_file' && (/\.xaml$/i.test(e.path) || /(^|\/)project\.json$/.test(e.path)))
+      .map((e) => e.path),
+    truncated: listing.truncated,
+  };
 }
 
 export interface Branch {
@@ -69,7 +78,7 @@ export interface Branch {
 }
 
 export async function getBranches(r: RepoRef): Promise<{ main?: string; branches: Branch[] }> {
-  const [repo, branches] = await Promise.all([
+  const [repo, { values: branches }] = await Promise.all([
     get(repoPath(r)).then((res) => res.json() as Promise<{ mainbranch?: { name: string } }>),
     getAll<{ name: string; target: { hash: string } }>(`${repoPath(r)}/refs/branches?pagelen=100&sort=-target.date`, 5),
   ]);
