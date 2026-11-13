@@ -106,7 +106,7 @@ If a file is not valid XML, the view says what failed and how to fix it. Broken 
 
 The overview reads every `.xaml` file under the folder that holds `project.json`. Repositories with several projects get a project selector. The overview shows:
 
-- **Entry points and invoked workflows:** the call tree from each entry point. Missing files, dynamic paths and recursive invokes are marked.
+- **Entry points and invoked workflows:** the call tree from each entry point. Missing files, dynamic paths and recursive invokes are marked. A workflow invoked from several places is expanded the first time and marked **Shown above** after that.
 - **Workflows:** argument count, invoke count, and whether an entry point or test case reaches the workflow.
 - **Dependencies:** package versions from `project.json`.
 

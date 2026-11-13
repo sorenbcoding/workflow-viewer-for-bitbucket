@@ -17,6 +17,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Filter Data Table conditions are shown as rows, e.g. `"Age" > 18` and `Or "Name" not empty`, with the first condition on the canvas.
 
 ### Fixed
+- The invoke tree expands each workflow once. Workflows invoked from several places are marked Shown above after the first time, so large projects with shared workflows no longer freeze the overview. A node limit marks anything beyond it as Not expanded.
+- A workflow read on demand no longer brings back the previous project when the branch or project changed while it was read.
+- File lists follow Bitbucket pagination up to 10,000 entries. When a repository has more, the overview says the list is incomplete and stops marking workflows as Not invoked.
+- Entities are decoded once, so text such as `&amp;lt;` in a display name shows as `&lt;` instead of `<`.
 - Development tools upgraded to Vite 8, @vitejs/plugin-react 6 and Vitest 5, clearing their moderate advisories.
 - The workflow overview reads at most 300 workflows when it opens, entry points first. Others are listed as Not read and read when opened. The dev harness accepts `?maxFiles=N` to try this.
 - Files that declare a `DOCTYPE` or are larger than 5 MB are rejected with a clear message instead of being parsed.
