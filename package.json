@@ -1,7 +1,7 @@
 {
   "name": "workflow-viewer-for-bitbucket",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Read-only canvas view of UiPath workflows inside Bitbucket Cloud.",
   "license": "MIT",
   "author": "Søren Schytz Birk",

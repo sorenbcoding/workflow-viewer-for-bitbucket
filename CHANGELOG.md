@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-13
+
+First public release, submitted to the Atlassian Marketplace.
+
 ### Added
 - END-USER-TERMS.md for the Marketplace listing (free, MIT-licensed, provided as is). The listing draft and images now meet Atlassian's sizes and text limits.
 - Draft Atlassian Marketplace listing (`docs/marketplace-listing.md`) with hero image and screenshots in `docs/marketplace/`.
