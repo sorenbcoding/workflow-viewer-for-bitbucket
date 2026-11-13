@@ -10,6 +10,7 @@ import {
   parseWorkflow,
   type ActivityNode,
   type GenericActivity,
+  type InvokeTreeNode,
   type WorkflowDocument,
 } from '../src/index.js';
 
@@ -232,6 +233,11 @@ describe('robustness', () => {
     expect(doc.root?.displayName).toBe('a < b & "c"\nd');
   });
 
+  it('decodes entities once, so escaped text stays as written', () => {
+    const doc = parseWorkflow('<Activity xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"><Sequence DisplayName="a &amp;lt; b &amp;#xA; c &amp;amp;" /></Activity>');
+    expect(doc.root?.displayName).toBe('a &lt; b &#xA; c &amp;');
+  });
+
   it('handles an empty workflow and a byte order mark', () => {
     const doc = parseWorkflow('﻿<Activity x:Class="Empty" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" />');
     expect(doc.className).toBe('Empty');
@@ -278,6 +284,43 @@ describe('project.json and invoke tree', () => {
       '    Framework/CalculateTotals.xaml',
       '    "Handlers\\" + invoiceType + ".xaml" (dynamic) (missing)',
     ]);
+  });
+
+  // Ten layers of two workflows, each invoking both workflows of the next layer.
+  const layered = () => {
+    const invoke = (target: string) => `<ui:InvokeWorkflowFile DisplayName="Invoke" WorkflowFileName="${target}" />`;
+    const wf = (targets: string[]) =>
+      parseWorkflow(
+        `<Activity xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:ui="http://schemas.uipath.com/workflow/activities"><Sequence>${targets.map(invoke).join('')}</Sequence></Activity>`,
+      );
+    const map = new Map<string, WorkflowDocument>();
+    map.set('Main.xaml', wf(['L0a.xaml', 'L0b.xaml']));
+    for (let i = 0; i < 10; i++) {
+      const next = i < 9 ? [`L${i + 1}a.xaml`, `L${i + 1}b.xaml`] : [];
+      map.set(`L${i}a.xaml`, wf(next));
+      map.set(`L${i}b.xaml`, wf(next));
+    }
+    return map;
+  };
+  const count = (n: InvokeTreeNode): number => 1 + n.children.reduce((s, c) => s + count(c), 0);
+  const all = (n: InvokeTreeNode): InvokeTreeNode[] => [n, ...n.children.flatMap(all)];
+
+  it('expands a workflow invoked from several places only once', () => {
+    const tree = buildInvokeTree('Main.xaml', layered());
+    expect(count(tree)).toBe(1 + 2 * 10 + 2 * 9);
+    const nodes = all(tree);
+    expect(new Set(nodes.map((n) => n.path)).size).toBe(21);
+    // Every second occurrence is a repeat, except in the last layer, which invokes nothing.
+    const repeats = nodes.filter((n) => n.isRepeat);
+    expect(repeats).toHaveLength(16);
+    for (const r of repeats) expect(nodes.some((n) => n.path === r.path && n.children.length > 0)).toBe(true);
+    expect(nodes.some((n) => n.isTruncated)).toBe(false);
+  });
+
+  it('stops at the node limit and marks where', () => {
+    const tree = buildInvokeTree('Main.xaml', layered(), 25, 5);
+    expect(count(tree)).toBeLessThanOrEqual(5);
+    expect(all(tree).some((n) => n.isTruncated)).toBe(true);
   });
 
   it('normalises paths and expressions', () => {

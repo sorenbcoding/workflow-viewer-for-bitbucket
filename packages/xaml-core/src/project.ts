@@ -151,25 +151,47 @@ export interface InvokeTreeNode {
   /** True when the path is already on the current branch of the tree (a recursive invoke). */
   isCycle: boolean;
   isDynamic: boolean;
+  /** True when the workflow's invokes are already expanded elsewhere in this tree. */
+  isRepeat?: boolean;
+  /** True when the tree reached its node limit before this workflow's invokes were expanded. */
+  isTruncated?: boolean;
   children: InvokeTreeNode[];
 }
 
 /**
  * Builds the call tree from an entry point.
  * `workflows` maps project-relative paths (forward slashes) to parsed documents.
+ * Each workflow's invokes are expanded once per tree; later occurrences are marked `isRepeat`.
+ * Without this, workflows invoked from many places make the tree grow exponentially.
  */
-export function buildInvokeTree(entry: string, workflows: Map<string, WorkflowDocument>, maxDepth = 25): InvokeTreeNode {
+export function buildInvokeTree(entry: string, workflows: Map<string, WorkflowDocument>, maxDepth = 25, maxNodes = 2000): InvokeTreeNode {
   const lower = new Map([...workflows.keys()].map((k) => [k.toLowerCase(), k]));
+  const expanded = new Set<string>();
+  let count = 0;
   const build = (path: string, trail: string[], dynamic: boolean): InvokeTreeNode => {
+    count += 1;
     const key = lower.get(path.toLowerCase()) ?? path;
     const doc = workflows.get(key);
     const node: InvokeTreeNode = { path: key, exists: !!doc, isCycle: trail.includes(key), isDynamic: dynamic, children: [] };
     if (!doc || node.isCycle || dynamic || trail.length >= maxDepth) return node;
+    if (expanded.has(key)) {
+      if (findInvokes(doc).length > 0) node.isRepeat = true;
+      return node;
+    }
+    if (count >= maxNodes) {
+      node.isTruncated = true;
+      return node;
+    }
+    expanded.add(key);
     const seen = new Set<string>();
     for (const inv of findInvokes(doc)) {
       const id = `${inv.isDynamic}:${inv.target}`;
       if (seen.has(id)) continue;
       seen.add(id);
+      if (count >= maxNodes) {
+        node.isTruncated = true;
+        break;
+      }
       node.children.push(build(inv.target, [...trail, key], inv.isDynamic));
     }
     return node;

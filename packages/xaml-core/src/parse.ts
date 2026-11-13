@@ -55,14 +55,6 @@ class Context {
   }
 }
 
-/** Decodes numeric character references that the XML parser leaves in attribute values, such as `&#xA;`. */
-export function decodeEntities(s: string): string {
-  return s
-    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d: string) => String.fromCodePoint(parseInt(d, 10)))
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-}
-
 const isPropertyOf = (child: XElement, parent: XElement) => child.name.startsWith(parent.name + '.');
 const isAttached = (child: XElement, parent: XElement) => localOf(child.name).includes('.') && !isPropertyOf(child, parent);
 const suffixOf = (child: XElement, parent: XElement) => child.name.slice(parent.name.length + 1);
@@ -88,7 +80,7 @@ function isActivityLike(el: XElement, ctx: Context): boolean {
 
 function annotationOf(el: XElement): string | undefined {
   const value = attrBySuffix(el, 'Annotation.AnnotationText') ?? childBySuffix(el, 'Annotation.AnnotationText')?.text;
-  return value ? decodeEntities(value) : undefined;
+  return value || undefined;
 }
 
 function parsePoints(text: string): Point[] {
@@ -145,7 +137,7 @@ const plainAttrs = (el: XElement) =>
 function filterText(el: XElement, ctx: Context, index: number): string {
   const part = (suffix: string) => {
     const prop = el.children.find((c) => c.name === `${el.name}.${suffix}`);
-    return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || decodeEntities(prop.text)) : '';
+    return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || prop.text) : '';
   };
   const op = el.attrs.Operator ?? '';
   const words = [index > 0 ? el.attrs.BooleanOperator : undefined, part('Column'), FILTER_OPERATORS[op] ?? op, part('Operand')];
@@ -159,12 +151,12 @@ function filterText(el: XElement, ctx: Context, index: number): string {
 function objectText(el: XElement, ctx: Context, index = 0): string {
   const local = localOf(el.name);
   if (local === 'Null') return '';
-  if (EXPRESSION_LOCALS.has(local)) return decodeEntities(deepText(el));
+  if (EXPRESSION_LOCALS.has(local)) return deepText(el);
   if (local === 'FilterOperationArgument') return filterText(el, ctx, index);
   if (local === 'AssignOperation') {
     const side = (suffix: string) => {
       const prop = el.children.find((c) => c.name === `${el.name}.${suffix}`);
-      return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || decodeEntities(prop.text)) : '';
+      return prop ? formatExpression(prop.children.map((c) => objectText(c, ctx)).join(' ') || prop.text) : '';
     };
     return `${side('To')} = ${side('Value')}`;
   }
@@ -172,13 +164,13 @@ function objectText(el: XElement, ctx: Context, index = 0): string {
   const items = el.children.filter((c) => !isPropertyOf(c, el) && !isAttached(c, el));
   const attrs = plainAttrs(el);
   if (!props.length && !items.length) {
-    if (el.text) return decodeEntities(el.text);
-    return attrs.length ? `${local} { ${attrs.map(([k, v]) => `${k}=${decodeEntities(v)}`).join(', ')} }` : '';
+    if (el.text) return el.text;
+    return attrs.length ? `${local} { ${attrs.map(([k, v]) => `${k}=${v}`).join(', ')} }` : '';
   }
   if (!props.length && !attrs.length) return items.map((c, i) => objectText(c, ctx, i)).filter(Boolean).join('\n');
   const parts = [
-    ...attrs.map(([k, v]) => `${k}=${decodeEntities(v)}`),
-    ...props.map((p) => `${suffixOf(p, el)}=${formatExpression(p.children.map((c) => objectText(c, ctx)).join(', ') || decodeEntities(p.text))}`),
+    ...attrs.map(([k, v]) => `${k}=${v}`),
+    ...props.map((p) => `${suffixOf(p, el)}=${formatExpression(p.children.map((c) => objectText(c, ctx)).join(', ') || p.text)}`),
     ...items.map((c, i) => formatExpression(objectText(c, ctx, i))),
   ];
   return `${local} { ${parts.join(', ')} }`;
@@ -227,7 +219,7 @@ function parseVariables(prop: XElement, scope: string, ctx: Context): WorkflowVa
       return {
         name: v.attrs.Name ?? '(unnamed)',
         type: typeName(v.attrs['x:TypeArguments']),
-        defaultValue: defaultValue ? decodeEntities(defaultValue) : undefined,
+        defaultValue: defaultValue || undefined,
         scope,
       };
     });
@@ -260,7 +252,7 @@ function baseOf(el: XElement, ctx: Context) {
     id: idRef || ctx.nextId(local),
     type: el.name,
     localType: local,
-    displayName: decodeEntities(el.attrs.DisplayName ?? local),
+    displayName: el.attrs.DisplayName ?? local,
     annotation: annotationOf(el),
     properties: {} as Record<string, string>,
     variables: [] as WorkflowVariable[],
@@ -275,7 +267,7 @@ function readAttributes(el: XElement, properties: Record<string, string>, skip: 
   for (const [k, v] of Object.entries(el.attrs)) {
     if (k === 'DisplayName' || k.startsWith('xmlns') || k.startsWith('mc:') || k === 'x:Name' || k === 'x:Key') continue;
     if (localOf(k).includes('.') || v === NULL_VALUE || skip.includes(k)) continue;
-    properties[k === 'x:TypeArguments' ? 'TypeArguments' : k] = decodeEntities(v);
+    properties[k === 'x:TypeArguments' ? 'TypeArguments' : k] = v;
   }
 }
 
@@ -312,7 +304,7 @@ function parseActivity(el: XElement, ctx: Context): ActivityNode {
         const s = slot(suffix);
         for (const c of child.children) if (!isValueElement(c, ctx)) s.children.push(parseActivity(c, ctx));
       } else if (child.children.length === 0) {
-        if (child.text) node.properties[suffix] = decodeEntities(child.text);
+        if (child.text) node.properties[suffix] = child.text;
       } else {
         for (const c of child.children) {
           const key = c.attrs['x:Key'];
@@ -344,7 +336,7 @@ function assignmentsOf(el: XElement, ctx: Context): { to: string; value: string 
     if (localOf(e.name) === 'AssignOperation') {
       const side = (suffix: string) => {
         const prop = e.children.find((c) => c.name === `${e.name}.${suffix}`);
-        return prop ? prop.children.map((c) => valueText(c, ctx)).join(' ') || decodeEntities(prop.text) : '';
+        return prop ? prop.children.map((c) => valueText(c, ctx)).join(' ') || prop.text : '';
       };
       rows.push({ to: side('To'), value: side('Value') });
     } else e.children.forEach(visit);
@@ -376,7 +368,7 @@ function parseFlowchart(el: XElement, ctx: Context): FlowchartActivity {
     const node: FlowNode = {
       id,
       kind: local === 'FlowStep' ? 'step' : local === 'FlowDecision' ? 'decision' : 'switch',
-      displayName: decodeEntities(n.attrs.DisplayName ?? (local === 'FlowDecision' ? 'Flow Decision' : local === 'FlowSwitch' ? 'Flow Switch' : '')),
+      displayName: n.attrs.DisplayName ?? (local === 'FlowDecision' ? 'Flow Decision' : local === 'FlowSwitch' ? 'Flow Switch' : ''),
       annotation: annotationOf(n),
       viewState: parseViewState(n),
     };
@@ -390,8 +382,8 @@ function parseFlowchart(el: XElement, ctx: Context): FlowchartActivity {
       const target = refTarget(n.attrs[attr]);
       if (target) edge(target, attr === 'Next' ? undefined : attr, key);
     }
-    if (n.attrs.Condition) node.expression = decodeEntities(n.attrs.Condition);
-    if (n.attrs.Expression) node.expression = decodeEntities(n.attrs.Expression);
+    if (n.attrs.Condition) node.expression = n.attrs.Condition;
+    if (n.attrs.Expression) node.expression = n.attrs.Expression;
 
     for (const c of n.children) {
       if (isPropertyOf(c, n)) {
@@ -448,7 +440,7 @@ function parseStateMachine(el: XElement, ctx: Context): StateMachineActivity {
     if (byId.has(id)) return id;
     const state: StateNode = {
       id,
-      displayName: decodeEntities(s.attrs.DisplayName ?? 'State'),
+      displayName: s.attrs.DisplayName ?? 'State',
       isFinal: s.attrs.IsFinal === 'True',
       annotation: annotationOf(s),
       viewState: parseViewState(s),
@@ -467,8 +459,8 @@ function parseStateMachine(el: XElement, ctx: Context): StateMachineActivity {
             id: attrBySuffix(t, 'WorkflowViewState.IdRef') ?? ctx.nextId('Transition'),
             from: id,
             to: refTarget(t.attrs.To) ?? '',
-            displayName: decodeEntities(t.attrs.DisplayName ?? 'Transition'),
-            condition: t.attrs.Condition ? decodeEntities(t.attrs.Condition) : undefined,
+            displayName: t.attrs.DisplayName ?? 'Transition',
+            condition: t.attrs.Condition || undefined,
             annotation: annotationOf(t),
             connector: parseViewState(t)?.connectors?.ConnectorLocation,
           };
@@ -520,7 +512,7 @@ function parseArguments(root: XElement): WorkflowArgument[] {
         name,
         direction,
         type: typeName(m ? m[2] : rawType),
-        defaultValue: defaultAttr ? decodeEntities(defaultAttr) : undefined,
+        defaultValue: defaultAttr || undefined,
         annotation: annotationOf(p),
       };
     });
