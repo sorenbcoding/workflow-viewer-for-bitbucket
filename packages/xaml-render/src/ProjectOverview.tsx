@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   buildInvokeTree,
   dirOf,
@@ -12,10 +12,18 @@ import {
 } from '@sorenb/xaml-core';
 import { WorkflowView } from './WorkflowView.js';
 
+/** The files a source found. */
+export interface FileListing {
+  /** File paths with forward slashes and no leading slash. */
+  paths: string[];
+  /** True when the source stopped before listing every file, e.g. at a page limit. */
+  truncated?: boolean;
+}
+
 /** Where the overview reads files from: the Bitbucket API, a local folder or bundled samples. */
 export interface RepoSource {
-  /** Every file path in the repository, with forward slashes and no leading slash. */
-  listFiles(): Promise<string[]>;
+  /** Every `.xaml` and `project.json` file in the repository; other files may be included. */
+  listFiles(): Promise<FileListing>;
   readText(path: string): Promise<string>;
 }
 
@@ -30,6 +38,8 @@ interface Props {
 }
 
 interface LoadedProject {
+  /** Which load this is; a read that finishes after a newer load started is ignored. */
+  generation: number;
   root: string;
   project?: UiPathProject;
   projectError?: string;
@@ -63,6 +73,8 @@ function InvokeTree({ node, onOpen, unread }: { node: InvokeTreeNode; onOpen: (p
       {notRead && <span className="sbv-tag" title="Not read yet. Open it to read it and see what it invokes.">Not read</span>}
       {!node.exists && !notRead && !node.isDynamic && <span className="sbv-tag sbv-tag--error">Missing file</span>}
       {node.isCycle && <span className="sbv-tag">Recursive</span>}
+      {node.isRepeat && <span className="sbv-tag" title="This workflow's invokes are shown where it first appears in this tree.">Shown above</span>}
+      {node.isTruncated && <span className="sbv-tag sbv-tag--warning" title="The tree is too large to show in full. Open this workflow to see what it invokes.">Not expanded</span>}
       {node.children.length > 0 && (
         <ul className="sbv-tree">
           {node.children.map((c, i) => <InvokeTree key={`${c.path}-${i}`} node={c} onOpen={onOpen} unread={unread} />)}
@@ -74,24 +86,29 @@ function InvokeTree({ node, onOpen, unread }: { node: InvokeTreeNode; onOpen: (p
 
 export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 300 }: Props) {
   const [files, setFiles] = useState<string[]>();
+  const [truncated, setTruncated] = useState(false);
   const [listError, setListError] = useState<string>();
   const [root, setRoot] = useState<string>();
   const [loaded, setLoaded] = useState<LoadedProject>();
   const [progress, setProgress] = useState<[number, number]>([0, 0]);
   const [openPath, setOpenPath] = useState<string>();
   const [openError, setOpenError] = useState<string>();
+  const generation = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
+    generation.current += 1;
     setFiles(undefined);
+    setTruncated(false);
     setListError(undefined);
     setLoaded(undefined);
     setOpenPath(undefined);
     source
       .listFiles()
-      .then((f) => {
+      .then(({ paths: f, truncated: cut }) => {
         if (cancelled) return;
         setFiles(f);
+        setTruncated(!!cut);
         const roots = f.filter((p) => p === 'project.json' || p.endsWith('/project.json')).map(dirOf);
         setRoot(roots.sort((a, b) => a.split('/').length - b.split('/').length || a.localeCompare(b))[0] ?? '');
       })
@@ -112,7 +129,7 @@ export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 3
     const xaml = files.filter(
       (p) => p.toLowerCase().endsWith('.xaml') && p.startsWith(prefix) && !IGNORED.test(p) && !nested.some((n) => p.startsWith(`${n}/`)),
     );
-    const result: LoadedProject = { root, workflows: new Map(), errors: new Map(), unread: [] };
+    const result: LoadedProject = { generation: ++generation.current, root, workflows: new Map(), errors: new Map(), unread: [] };
     setLoaded(undefined);
     setProgress([0, Math.min(xaml.length, maxFiles)]);
     (async () => {
@@ -154,12 +171,19 @@ export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 3
     if (known) return setOpenPath(known);
     const pending = loaded.unread.find((u) => u.toLowerCase() === path.toLowerCase());
     if (!pending) return setOpenPath(path);
+    const started = loaded.generation;
     try {
       const doc = parseWorkflow(await source.readText(joinPath(loaded.root, pending)));
-      setLoaded({ ...loaded, workflows: new Map(loaded.workflows).set(pending, doc), unread: loaded.unread.filter((u) => u !== pending) });
+      // The user may have changed branch or project while the file was read.
+      if (generation.current !== started) return;
+      setLoaded((cur) =>
+        cur && cur.generation === started
+          ? { ...cur, workflows: new Map(cur.workflows).set(pending, doc), unread: cur.unread.filter((u) => u !== pending) }
+          : cur,
+      );
       setOpenPath(pending);
     } catch (e) {
-      setOpenError((e as Error).message);
+      if (generation.current === started) setOpenError((e as Error).message);
     }
   };
 
@@ -242,6 +266,12 @@ export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 3
           {project?.description && <p>{project.description}</p>}
           {loaded.projectError && <p className="sbv-error" role="alert">{loaded.projectError}</p>}
           {openError && <p className="sbv-error" role="alert">{openError}</p>}
+          {truncated && (
+            <p className="sbv-warning" role="status">
+              The repository has more files than the overview can list, so some workflows may be missing below and in the call tree. Workflows
+              not listed can still be opened from the repository source view.
+            </p>
+          )}
           {loaded.unread.length > 0 && (
             <p className="sbv-warning" role="status">
               Read {loaded.workflows.size + loaded.errors.size} of {loaded.workflows.size + loaded.errors.size + loaded.unread.length} workflows — the
@@ -271,7 +301,7 @@ export function ProjectOverview({ source, toolbar, concurrency = 6, maxFiles = 3
                     <td>
                       {r.isEntry && <span className="sbv-tag">Entry point</span>}
                       {r.isTest && <span className="sbv-tag">Test case</span>}
-                      {!r.reached && project && loaded.unread.length === 0 && <span className="sbv-tag" title="No entry point or test case invokes this workflow with a static path.">Not invoked</span>}
+                      {!r.reached && project && loaded.unread.length === 0 && !truncated && <span className="sbv-tag" title="No entry point or test case invokes this workflow with a static path.">Not invoked</span>}
                       {r.doc.warnings.length > 0 && <span className="sbv-tag sbv-tag--warning" title={r.doc.warnings.join('\n')}>{r.doc.warnings.length} warning(s)</span>}
                     </td>
                   </tr>
