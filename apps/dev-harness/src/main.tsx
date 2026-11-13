@@ -15,8 +15,11 @@ const SAMPLES = Object.fromEntries(
   ),
 );
 
+// `?truncated` makes the listing report that it stopped early, to try the warning.
+const TRUNCATED = new URLSearchParams(location.search).has('truncated');
+
 const memorySource = (files: Record<string, string>): RepoSource => ({
-  listFiles: async () => Object.keys(files),
+  listFiles: async () => ({ paths: Object.keys(files), truncated: TRUNCATED }),
   readText: async (p) => {
     if (!(p in files)) throw new Error(`Could not read ${p} — the file is not in the selected folder. Select the folder again.`);
     return files[p];
