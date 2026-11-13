@@ -1,6 +1,6 @@
 {
   "name": "@sorenb/xaml-render",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "React components that draw a parsed UiPath workflow as a compact, read-only canvas.",
   "license": "MIT",
@@ -8,7 +8,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
-    "@sorenb/xaml-core": "0.1.0"
+    "@sorenb/xaml-core": "1.0.0"
   },
   "peerDependencies": {
     "react": "^18.3.1",
