@@ -1,5 +1,5 @@
 export * from './model.js';
-export { parseWorkflow, decodeEntities } from './parse.js';
+export { parseWorkflow } from './parse.js';
 export {
   parseProjectJson,
   normalisePath,

@@ -18,7 +18,8 @@ const parser = new XMLParser({
   parseAttributeValue: false,
   trimValues: true,
   processEntities: true,
-  htmlEntities: false,
+  // Decodes numeric references such as `&#xA;` in the same single pass as `&amp;`, so `&amp;lt;` stays `&lt;`.
+  htmlEntities: true,
   ignoreDeclaration: true,
   ignorePiTags: true,
   commentPropName: false,
